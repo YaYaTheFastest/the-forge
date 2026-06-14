@@ -1,0 +1,130 @@
+{
+  "version": "2026-05-a",
+  "lastUpdated": "2026-05-29T20:15:00Z",
+  "equipment": [
+    {
+      "slug": "1987-john-deere-2150",
+      "name": "1987 John Deere 2150",
+      "shortName": "JD2150",
+      "fleet": "Ranch Operations",
+      "type": "Compact Utility Tractor",
+      "importance": "high",
+      "currentHours": 1842,
+      "lastServiceDate": "2026-04-12",
+      "lastServiceHours": 1742,
+      "maintenanceItems": [
+        {
+          "task": "Oil & Filter Change",
+          "intervalHours": 100,
+          "lastCompletedDate": "2026-04-12",
+          "lastCompletedHours": 1742,
+          "nextDueAt": 1842,
+          "tenPercentWindowStartsAt": 1832,
+          "status": "red",
+          "notes": "Use 5W-30 synthetic. Always change filter at the same time."
+        },
+        {
+          "task": "Hydraulic / Transmission Service",
+          "intervalHours": 300,
+          "lastCompletedDate": "2025-11-03",
+          "lastCompletedHours": 1420,
+          "nextDueAt": 1720,
+          "tenPercentWindowStartsAt": 1690,
+          "status": "yellow"
+        }
+      ],
+      "serviceHistory": [
+        {
+          "date": "2026-04-12",
+          "hours": 1742,
+          "task": "Oil & Filter Change",
+          "notes": "Routine service before big mowing season"
+        }
+      ],
+      "richCardPath": "20 Knowledge Base/Shop-Property-Ranch/Equipment/Tractors/1987 John Deere 2150/1987 John Deere 2150 - Equipment Card.md",
+      "status": "active",
+      "lastUpdated": "2026-05-29T20:15:00Z",
+      "bjjNotes": [
+        "Significant grip and core demand when operating without loader",
+        "Mental toughness + problem solving under variable field conditions"
+      ],
+      "fitnessNotes": [
+        "High physical demand days — prioritize recovery and hip/shoulder mobility"
+      ]
+    },
+    {
+      "slug": "yamaha-tt-r110e",
+      "name": "Yamaha TT-R110E (KTM)",
+      "shortName": "KTM TTR110",
+      "fleet": "Ranch Operations",
+      "type": "Dirt Bike",
+      "importance": "high",
+      "currentHours": 487,
+      "lastServiceDate": "2026-03-20",
+      "lastServiceHours": 420,
+      "maintenanceItems": [
+        {
+          "task": "Basic Service (valves, oil, chain, bearings)",
+          "intervalHours": 50,
+          "lastCompletedDate": "2026-03-20",
+          "lastCompletedHours": 420,
+          "nextDueAt": 470,
+          "tenPercentWindowStartsAt": 465,
+          "status": "yellow",
+          "notes": "Use full synthetic 10W-50. Check valve clearances on this model."
+        }
+      ],
+      "serviceHistory": [],
+      "richCardPath": "20 Knowledge Base/Shop-Property-Ranch/Equipment/Motorcycles/Yamaha TT-R110E - Equipment Card.md",
+      "status": "active",
+      "lastUpdated": "2026-05-29T18:40:00Z"
+    },
+    {
+      "slug": "72-woods-mower",
+      "name": "72 Inch Woods Mower",
+      "shortName": "Woods 72\"",
+      "fleet": "Ranch Operations",
+      "type": "PTO Mower",
+      "importance": "high",
+      "currentHours": 312,
+      "lastServiceDate": "2026-05-01",
+      "lastServiceHours": 280,
+      "maintenanceItems": [
+        {
+          "task": "PTO Gearbox Oil Flush & Fill",
+          "intervalHours": 200,
+          "lastCompletedDate": "2026-05-01",
+          "lastCompletedHours": 280,
+          "nextDueAt": 480,
+          "tenPercentWindowStartsAt": 460,
+          "status": "green"
+        }
+      ],
+      "serviceHistory": [],
+      "richCardPath": "20 Knowledge Base/Shop-Property-Ranch/Equipment/Mowers/72 Inch Woods Mower/72 Inch Woods Mower - Equipment Card.md",
+      "status": "active",
+      "lastUpdated": "2026-05-29T19:10:00Z"
+    },
+    {
+      "slug": "stihl-ms-261",
+      "name": "Stihl MS 261 C-M",
+      "shortName": "Stihl 261",
+      "fleet": "Ranch Operations",
+      "type": "Chainsaw",
+      "importance": "medium",
+      "currentHours": null,
+      "maintenanceItems": [
+        {
+          "task": "Chain Sharpening + Tension + Bar Maintenance",
+          "intervalType": "as-needed",
+          "status": "green"
+        }
+      ],
+      "serviceHistory": [],
+      "richCardPath": "20 Knowledge Base/Shop-Property-Ranch/Equipment/Chainsaws/Stihl MS 261 C-M/Stihl MS 261 C-M - Equipment Card.md",
+      "status": "active",
+      "lastUpdated": "2026-05-20T10:00:00Z"
+    }
+  ],
+  "pendingImprovements": []
+}

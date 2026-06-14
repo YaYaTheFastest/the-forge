@@ -1,0 +1,146 @@
+{
+  "GB1-W05-A2 - Pull Feet Sweep with Opponent Standing from Closed Guard.md": {
+    "frontmatter": {
+      "name": "Pull Feet Sweep with Opponent Standing from Closed Guard",
+      "position": "closed-guard",
+      "category": "sweep",
+      "gb_curriculum": ["Week 5 - A2", "GB1 Curriculum"],
+      "confidence": 4,
+      "provider": "Gracie Barra (GB affiliate mechanics prioritized for GB Greensboro alignment)",
+      "captured_date": "2026-05-24",
+      "principle_tags": ["closed guard", "sweep", "pull feet sweep", "guard sweeps", "closed guard attacks", "distance management"],
+      "related_techniques": [
+        "GB1-W05-A3 - Waiter Sweep",
+        "GB1-W01-A3 - Scissor Sweep",
+        "GB1-W09-A2 - Pendulum Sweep",
+        "GB1-W05-B1 - Block Punches from Closed Guard + Distance Mgmt + Up Kick + Technical Lift",
+        "GB1-W13-B1 - Distance Management from Closed Guard + Knee Shield + Up Kick + Technical Lift"
+      ],
+      "videos": [
+        {
+          "url": "https://www.youtube.com/watch?v=qto5bw_eEfQ",
+          "title": "Pendulum Sweep from Closed Guard - Week 9",
+          "credit": "Gracie Barra Scottsdale (GB affiliate prioritized per GB Greensboro rule)",
+          "timestamp": "",
+          "why": "Hip elevation, angle creation, and posting hip base when the opponent is standing or postured — directly relevant to pulling the feet when they are standing in your guard."
+        },
+        {
+          "url": "https://www.youtube.com/playlist?list=PLr-z5vDCpY3L0Z4aj3Sy0pgVXQjhnAUkW",
+          "title": "Gracie Barra Scottsdale Weekly Technique Videos (GB1-aligned)",
+          "credit": "Gracie Barra Scottsdale",
+          "timestamp": "",
+          "why": "GB affiliate source for the closed guard sweep progression and distance management concepts."
+        }
+      ]
+    },
+    "body": "## Concept\n\n# Pull Feet Sweep with Opponent Standing from Closed Guard\n\n**Position:** Closed Guard  \n**Category:** Sweep  \n**Curriculum:** GB1 Week 5 A2  \n**Confidence:** 4/5\n\nWhen the opponent is standing or postured high in your closed guard (common after distance management or when they try to pass), you use the closed guard to pull one or both feet out from under them while elevating the hips to sweep them backward or to the side.\n\nThe core hip elevation and angle mechanics are the same as the GB-reviewed closed guard sweeps (Scottsdale affiliate content).\n\n## Setup\n\nClosed guard. Opponent is standing or has one or both feet planted with weight forward or to the side.\n\n- Strong sleeve or pants grip on the leg you intend to pull.\n- Hips active and ready to elevate.\n\nWikilink connections:\n- Builds on the hip elevation from [[GB1-W01-A3 - Scissor Sweep]] and [[GB1-W05-B1 - Block Punches from Closed Guard + Distance Mgmt + Up Kick + Technical Lift]].\n- Timing and grip concepts connect to [[GB1-W09-A2 - Pendulum Sweep]] and the Week 13 distance management card.\n\n## Execution\n\n### Control the Standing Leg(s)\n1. Secure a strong grip on the opponent's pants or ankle on the side you will sweep (often the leg that is forward or lighter).\n2. Use your other hand or leg to control posture or the opposite leg if needed.\n\n### Elevate Hips + Pull the Feet\n1. Drive your knees toward your chest (hip elevation) while pulling the controlled leg(s) upward and toward you.\n2. The elevation removes their base; the pull on the feet completes the sweep backward or to the side.\n\n### Finish to Top or Guard Pass Prevention\n1. Follow or roll through to top position, or use the momentum to recover a better guard or initiate a pass prevention.\n\n### Hand Placement & References\n- **Pants/ankle grip**: Deep, strong grip on the fabric or ankle — this is the connection point that lets the hips do the work. Similar control principle to sleeve/collar feeds in the GB Scottsdale reviewed sweeps and attacks.\n- **Hip elevation with posting hip base**: Same loading as Pendulum and Scissor. Weight on the posting hip while the active hip elevates and the arms pull the feet.\n\n## Common Mistakes\n- Pulling only with the arms without sufficient hip elevation (opponent easily steps out or bases).\n- Weak grip on the pants/ankle (slips under resistance).\n- Not committing to the elevation — half-hearted pull leaves you vulnerable.\n\n## Key Principles\n- **Hips remove the base, arms finish the pull**: Elevation is primary; the grip on the feet is the follow-through. Direct application of GB affiliate hip-first sweep mechanics.\n- **Posting hip for stability**: Maintain weight on the stable hip during the pull so you don't get rolled or lose connection.\n- **Standing opponent = different angle**: When they are standing, the sweep direction is often more backward or diagonal than when they are kneeling. Adjust the hip shift accordingly.\n- **Chain to other techniques**: If the pull is defended, the same grips and elevation often allow a transition to waiter sweep, tripod, or a guard pass prevention entry.\n\n## Media & Visual References\n\n**GB Affiliate Priority (per GB Greensboro rule):**\n\nSee the embedded videos in the Media gallery above (primarily the GB Scottsdale Week 9 Pendulum and the full affiliate playlist). These provide the hip elevation, posting hip base, and angle creation principles that power the pull-feet sweep when the opponent is standing.\n\nAdditional GB sources located (after Greensboro-first searches):\n- Gracie Barra Bristol blog post on Tripod Sweep & Closed Guard Back Take (context on standing/kneeling variations).\n- Gracie Barra Advance Vol.1 (official curriculum reference for tripod/waiter/pull feet concepts).\n\n**Why these are valuable:** The core loading (elevate + pull with hips driving) is consistent across the GB1 sweep family taught at the user's academy.\n\nCross-references: [[GB1-W05-A3 - Waiter Sweep]], [[GB1-W05-B3 - Outside Hook Sweep (When Opponent Defends Tripod)]], and the Week 13 distance management card for the connected standing/kneeling sweep tree.\n\n**Hand Placement & References**  \nPants/ankle grip + hip elevation with posting base. Drill together with the other Week 5 sweeps and the GB Scottsdale-reviewed pendulum for consistent hip mechanics.\n\n## Personal Cues & Notes\n"
+  },
+  "GB1-W05-A3 - Waiter Sweep.md": {
+    "frontmatter": {
+      "name": "Waiter Sweep",
+      "position": "closed-guard",
+      "category": "sweep",
+      "gb_curriculum": ["Week 5 - A3", "GB1 Curriculum"],
+      "confidence": 4,
+      "provider": "Gracie Barra (GB affiliate mechanics prioritized for GB Greensboro alignment)",
+      "captured_date": "2026-05-24",
+      "principle_tags": ["closed guard", "sweep", "waiter sweep", "guard sweeps", "closed guard attacks"],
+      "related_techniques": [
+        "GB1-W05-A2 - Pull Feet Sweep with Opponent Standing from Closed Guard",
+        "GB1-W01-A3 - Scissor Sweep",
+        "GB1-W09-A2 - Pendulum Sweep",
+        "GB1-W05-B3 - Outside Hook Sweep (When Opponent Defends Tripod)",
+        "GB1-W13-B1 - Distance Management from Closed Guard + Knee Shield + Up Kick + Technical Lift"
+      ],
+      "videos": [
+        {
+          "url": "https://www.youtube.com/watch?v=qto5bw_eEfQ",
+          "title": "Pendulum Sweep from Closed Guard - Week 9",
+          "credit": "Gracie Barra Scottsdale (GB affiliate prioritized per GB Greensboro rule)",
+          "timestamp": "",
+          "why": "Hip elevation and posting hip base when the opponent is postured or standing — the waiter sweep uses a similar loading with an under-the-leg hook or lift variation."
+        },
+        {
+          "url": "https://www.youtube.com/playlist?list=PLr-z5vDCpY3L0Z4aj3Sy0pgVXQjhnAUkW",
+          "title": "Gracie Barra Scottsdale Weekly Technique Videos (GB1-aligned)",
+          "credit": "Gracie Barra Scottsdale",
+          "timestamp": "",
+          "why": "GB affiliate curriculum context for the Week 5 sweep family including waiter variations."
+        }
+      ]
+    },
+    "body": "## Concept\n\n# Waiter Sweep\n\n**Position:** Closed Guard  \n**Category:** Sweep  \n**Curriculum:** GB1 Week 5 A3  \n**Confidence:** 4/5\n\nThe waiter sweep is a closed guard sweep that uses an under-the-leg hook or \"waiter\" lift combined with hip elevation to reverse the opponent, often when they are postured or defending other entries.\n\nThe hip loading is consistent with the GB Scottsdale-reviewed closed guard sweeps.\n\n## Setup\n\nClosed guard. Opponent postured or defending a prior sweep attempt.\n\n- Control one leg (often by hooking under it or controlling the pants).\n- Hips ready to elevate.\n\nWikilink connections:\n- Sister sweep to [[GB1-W05-A2 - Pull Feet Sweep with Opponent Standing from Closed Guard]] and the tripod/outside hook reaction chain.\n- Hip mechanics overlap with [[GB1-W09-A2 - Pendulum Sweep]] (GB Scottsdale Week 9).\n\n## Execution\n\n### Hook the Leg\n1. Bring one leg under the opponent's leg (the \"waiter\" hook) while controlling posture with the arms.\n2. Secure the hook and prepare the elevation.\n\n### Elevate + Lift\n1. Drive the hips up (elevation) while using the hooked leg and arm control to lift and rotate the opponent over the hooked side.\n2. The posting hip provides the base for the drive.\n\n### Finish to Top\n1. Follow through to side mount or mount.\n\n### Hand Placement & References\n- **Leg hook + arm control**: The under-leg hook combined with collar/sleeve or pants grip. The hook leg does part of the lifting work while the hips drive.\n- **Posting hip base during elevation**: Same principle as all the GB-prioritized sweeps in this wave.\n\n## Common Mistakes\n- Weak hook (opponent steps out or bases).\n- Insufficient hip elevation (the lift fails).\n- Losing the posting hip base and flattening during the drive.\n\n## Key Principles\n- **Hook + hips together**: The leg hook amplifies the hip elevation; neither works well alone.\n- **Posting hip stability**: Maintain the base hip while the active hip and hook finish the lift.\n- **Reaction chaining**: Defending one sweep often sets up the waiter or outside hook. GB1 trains the tree of reactions.\n- **Consistent hip mechanics**: The elevation and posting base are the same as the GB Scottsdale pendulum and triangle retention cues.\n\n## Media & Visual References\n\n**GB Affiliate Priority (per GB Greensboro rule):**\n\nSee embedded videos above (GB Scottsdale Pendulum Week 9 + playlist). Additional GB context from searches: Gracie Barra Advance Vol.1 (official curriculum reference for tripod/waiter concepts) and various GB school demonstrations of the standing/kneeling waiter variations.\n\nThe core hip elevation + posting base from the reviewed GB Scottsdale material applies directly to the waiter lift.\n\nCross-references: The full Week 5 sweep family and [[GB1-W09-A2 - Pendulum Sweep]].\n\n## Personal Cues & Notes\n"
+  },
+  "GB1-W05-B3 - Outside Hook Sweep (When Opponent Defends Tripod).md": {
+    "frontmatter": {
+      "name": "Outside Hook Sweep (When Opponent Defends Tripod)",
+      "position": "closed-guard",
+      "category": "sweep",
+      "gb_curriculum": ["Week 5 - B3", "GB1 Curriculum"],
+      "confidence": 4,
+      "provider": "Gracie Barra (GB affiliate mechanics prioritized for GB Greensboro alignment)",
+      "captured_date": "2026-05-24",
+      "principle_tags": ["closed guard", "sweep", "outside hook sweep", "guard sweeps", "closed guard attacks"],
+      "related_techniques": [
+        "GB1-W05-B2 - Tripod Sweep",
+        "GB1-W01-A3 - Scissor Sweep",
+        "GB1-W09-A2 - Pendulum Sweep",
+        "GB1-W05-A3 - Waiter Sweep",
+        "GB1-W13-B1 - Distance Management from Closed Guard + Knee Shield + Up Kick + Technical Lift"
+      ],
+      "videos": [
+        {
+          "url": "https://www.youtube.com/watch?v=qto5bw_eEfQ",
+          "title": "Pendulum Sweep from Closed Guard - Week 9",
+          "credit": "Gracie Barra Scottsdale (GB affiliate prioritized per GB Greensboro rule)",
+          "timestamp": "",
+          "why": "Hip elevation and posting hip base when the opponent reacts defensively (posting or stepping) — the outside hook is the direct reaction to tripod defense."
+        },
+        {
+          "url": "https://www.youtube.com/playlist?list=PLr-z5vDCpY3L0Z4aj3Sy0pgVXQjhnAUkW",
+          "title": "Gracie Barra Scottsdale Weekly Technique Videos (GB1-aligned)",
+          "credit": "Gracie Barra Scottsdale",
+          "timestamp": "",
+          "why": "GB affiliate source showing the sweep reaction chain (tripod defense → outside hook)."
+        }
+      ]
+    },
+    "body": "## Concept\n\n# Outside Hook Sweep (When Opponent Defends Tripod)\n\n**Position:** Closed Guard  \n**Category:** Sweep  \n**Curriculum:** GB1 Week 5 B3  \n**Confidence:** 4/5\n\nThe outside hook sweep is the direct follow-up when the opponent defends the tripod sweep by stepping or basing out. You use an outside hook on the stepping leg combined with hip elevation and drive to sweep them in the new direction.\n\nThe hip mechanics are consistent with the GB Scottsdale-reviewed family.\n\n## Setup\n\nClosed guard. Opponent has defended the tripod by stepping the posted leg or creating a new base.\n\n- Control the stepping leg or the opposite side.\n- Hips active.\n\nWikilink connections:\n- Direct reaction to [[GB1-W05-B2 - Tripod Sweep]].\n- Part of the Week 5 sweep reaction tree with scissor, waiter, and pull feet.\n- Hip concepts link to [[GB1-W09-A2 - Pendulum Sweep]] (GB Scottsdale).\n\n## Execution\n\n### Recognize the Defense and Hook Outside\n1. As the opponent steps or bases to defend the tripod, immediately hook their stepping leg from the outside with one of your legs.\n2. Maintain or re-establish arm control on the opposite side or the posted arm.\n\n### Elevate + Drive the New Angle\n1. Elevate the hips (same loading as tripod/scissor) while driving with the outside hook and the arm control to rotate them over the new angle.\n2. Use the posting hip for base during the drive.\n\n### Finish to Top\n1. Follow to dominant position.\n\n### Hand Placement & References\n- **Outside hook + opposite control**: The hook leg on the stepping limb + collar/sleeve or far arm control. The hook changes the sweep direction.\n- **Consistent hip elevation + posting base**: The same GB-reviewed mechanic across the entire sweep family.\n\n## Common Mistakes\n- Late hook (opponent recovers base).\n- Insufficient elevation (the drive has no power).\n- Wrong angle (fighting the new base instead of using it).\n\n## Key Principles\n- **Defense creates the next entry**: The opponent's reaction to one sweep sets up the next (tripod defense → outside hook). GB1 trains the full tree.\n- **Hip elevation remains the constant**: Regardless of the leg action (scissor, tripod, outside hook, waiter), the hip loading is the same.\n- **Posting hip base**: Critical for power and stability when changing direction mid-sweep.\n- **Angle over force**: Using the opponent's new base against them by driving the correct angle.\n\n## Media & Visual References\n\n**GB Affiliate Priority (per GB Greensboro rule):**\n\nSee embedded videos above (GB Scottsdale Pendulum + playlist). The hip elevation and posting base mechanics are the constant that makes the outside hook work when the opponent defends the tripod.\n\nAdditional GB context from searches includes school demonstrations of the tripod → outside hook reaction in GB curricula.\n\nCross-references: The full Week 5 sweep reaction chain and the GB Scottsdale-reviewed pendulum for the shared hip details.\n\n## Personal Cues & Notes\n"
+  },
+  "GB1-W13-B1 - Distance Management from Closed Guard + Knee Shield + Up Kick + Technical Lift.md": {
+    "frontmatter": {
+      "name": "Distance Management from Closed Guard + Knee Shield + Up Kick + Technical Lift",
+      "position": "closed-guard",
+      "category": "sweep",
+      "gb_curriculum": ["Week 13 - B1", "GB1 Curriculum"],
+      "confidence": 4,
+      "provider": "Gracie Barra (GB affiliate mechanics prioritized for GB Greensboro alignment)",
+      "captured_date": "2026-05-24",
+      "principle_tags": ["closed guard", "distance management", "knee shield", "up kick", "technical lift", "guard sweeps", "closed guard attacks"],
+      "related_techniques": [
+        "GB1-W05-B1 - Block Punches from Closed Guard + Distance Mgmt + Up Kick + Technical Lift",
+        "GB1-W13-A2 - Sit-Up Sweep",
+        "GB1-W09-A2 - Pendulum Sweep",
+        "GB1-W05-A2 - Pull Feet Sweep with Opponent Standing from Closed Guard",
+        "GB1-W01-A3 - Scissor Sweep"
+      ],
+      "videos": [
+        {
+          "url": "https://www.youtube.com/watch?v=qto5bw_eEfQ",
+          "title": "Pendulum Sweep from Closed Guard - Week 9",
+          "credit": "Gracie Barra Scottsdale (GB affiliate prioritized per GB Greensboro rule)",
+          "timestamp": "",
+          "why": "Hip elevation, posting hip base, and angle creation when managing distance and using knee shield / up kick setups. The same loading for the technical lift finish."
+        },
+        {
+          "url": "https://www.youtube.com/playlist?list=PLr-z5vDCpY3L0Z4aj3Sy0pgVXQjhnAUkW",
+          "title": "Gracie Barra Scottsdale Weekly Technique Videos (GB1-aligned)",
+          "credit": "Gracie Barra Scottsdale",
+          "timestamp": "",
+          "why": "GB affiliate source for Week 13 distance management and closed guard combinations."
+        }
+      ]
+    },
+    "body": "## Concept\n\n# Distance Management from Closed Guard + Knee Shield + Up Kick + Technical Lift\n\n**Position:** Closed Guard  \n**Category:** Sweep  \n**Curriculum:** GB1 Week 13 B1  \n**Confidence:** 4/5\n\nAn advanced closed guard combination from Week 13: manage the opponent's posture and distance with frames and knee shield, use an up kick to create space or off-balance, then execute a technical lift sweep. It integrates distance management, knee shield, up kick, and the hip elevation mechanics of the sweep family.\n\nThe hip loading is the same as the GB Scottsdale-reviewed closed guard sweeps.\n\n## Setup\n\nClosed guard. Opponent is postured, reaching, or trying to pass or stand.\n\n- Strong frames and knee shield to manage distance and posture.\n- One leg ready for the up kick.\n- Hips active for the lift.\n\nWikilink connections:\n- Builds directly on the Week 5 block punches distance management cards ([[GB1-W05-B1 - Block Punches from Closed Guard + Distance Mgmt + Up Kick + Technical Lift]]).\n- Knee shield and up kick concepts connect to spider guard and other open guard entries.\n- The technical lift finish uses the same hip elevation as [[GB1-W09-A2 - Pendulum Sweep]] (GB Scottsdale Week 9) and the scissor/tripod family.\n\n## Execution\n\n### Manage Distance with Frames and Knee Shield\n1. Use forearms, shins, or a knee shield to keep the opponent at the desired distance and prevent them from passing or standing comfortably.\n2. Control one arm or the head with the free hand.\n\n### Up Kick to Create Opportunity\n1. As the opponent pressures or reaches, deliver a sharp up kick (or knee shield extension) to off-balance them or create space.\n2. Use the momentum to set up the elevation.\n\n### Hip Elevation + Technical Lift\n1. Immediately drive the hips up (elevation) while pulling with the arm control and using the knee shield or hooked leg to lift and rotate.\n2. Maintain posting hip base during the drive.\n3. Follow to top position.\n\n### Hand Placement & References\n- **Knee shield + arm control**: The knee shield acts as both distance tool and lifting lever. Arm control (sleeve, collar, or head) provides the connection for the hip power.\n- **Hip elevation with posting base**: The constant from all GB-prioritized closed guard sweeps (Scottsdale Pendulum, triangle retention, etc.).\n\n## Common Mistakes\n- Passive knee shield (opponent closes distance or passes).\n- Weak or mistimed up kick (no off-balance created).\n- Insufficient hip elevation (the lift has no power).\n- Losing the posting hip during the drive.\n\n## Key Principles\n- **Distance management is active**: The knee shield and frames are not passive — they control posture and create the window for the up kick and lift.\n- **Up kick as trigger**: The kick creates the momentary off-balance; the hips and technical lift finish the reversal.\n- **Hip elevation is the engine**: Same GB affiliate hip loading as the entire sweep family (Pendulum Week 9, scissor, tripod, etc.).\n- **Posting hip base under dynamic movement**: Critical when combining knee shield, kick, and lift in one sequence.\n- **Bridge to open guard**: The knee shield and distance management concepts here are the foundation for spider guard and other open guard sweeps.\n\n## Media & Visual References\n\n**GB Affiliate Priority (per GB Greensboro rule):**\n\nSee embedded videos above (primarily GB Scottsdale Week 9 Pendulum for the hip mechanics + the full playlist for Week 13 context). Additional GB sources from searches provide context on distance management and knee shield variations in GB curricula (e.g., various school demonstrations and the Bristol closed guard back take / tripod material).\n\nThe core hip elevation + posting base from the reviewed GB Scottsdale closed guard attack series is the foundation for the technical lift finish in this Week 13 distance management combination.\n\nCross-references: [[GB1-W05-B1 - Block Punches from Closed Guard + Distance Mgmt + Up Kick + Technical Lift]] (the Week 5 version) and [[GB1-W13-A2 - Sit-Up Sweep]].\n\n## Personal Cues & Notes\n"
+  }
+}

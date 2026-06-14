@@ -1,0 +1,16 @@
+{
+  "name": "The Mat",
+  "short_name": "The Mat",
+  "description": "Personal BJJ training platform — techniques, curriculum, routines and mind maps from your Obsidian vault.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f5f7",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

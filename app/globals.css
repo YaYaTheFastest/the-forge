@@ -22,5 +22,264 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Let the Geist font from layout.tsx take over for a modern look */
+}
+
+/* The Mat — improved light mode for better card contrast */
+:root {
+  --background: 220 15% 96%;      /* soft off-white so white cards pop */
+  --foreground: 225 15% 12%;
+  --card: 0 0% 100%;
+  --card-border: 220 10% 88%;
+  --border: 220 10% 88%;
+  --muted: 220 10% 92%;
+  --muted-foreground: 220 10% 42%;
+  --ring: 0 0% 10%;
+}
+
+/* Dark mode foundation (will be expanded) */
+.dark {
+  --background: 228 20% 7%;
+  --foreground: 220 10% 92%;
+  --card: 228 18% 10%;
+  --card-border: 225 15% 14%;
+  --border: 225 15% 15%;
+  --muted: 225 12% 16%;
+  --muted-foreground: 220 10% 55%;
+}
+
+/* ============================================
+   The Mat — 6-Section Card Design System (Tailwind Integration Phase 1)
+   Aligned with the 2026 Technique Card Standard (Header / Observe / Learn / Where It Leads / Execute / Actions Footer)
+   ============================================ */
+
+:root {
+  /* 6-Section Card Tokens */
+  --card-section-gap: 1.25rem;           /* Spacing between major sections */
+  --card-inner-padding: 1rem;            /* Internal padding for sections */
+
+  /* Learn section (principles most prominent) */
+  --learn-principle-bg: 220 10% 96%;
+  --learn-principle-border: 220 10% 88%;
+  --learn-principle-text: 225 15% 12%;
+
+  /* Where It Leads section (high visibility) */
+  --where-it-leads-bg: 220 15% 94%;
+  --where-it-leads-border: 220 15% 80%;
+  --where-it-leads-accent: 220 70% 50%;   /* Subtle blue accent for flows/chains */
+
+  /* Execute section */
+  --execute-step-bg: 0 0% 100%;
+  --execute-step-border: 220 10% 88%;
+
+  /* Actions Footer */
+  --actions-footer-bg: 220 10% 92%;
+  --actions-footer-text: 220 10% 42%;
+}
+
+/* Dark mode 6-section tokens */
+.dark {
+  --learn-principle-bg: 228 18% 12%;
+  --learn-principle-border: 225 15% 18%;
+  --learn-principle-text: 220 10% 92%;
+
+  --where-it-leads-bg: 228 20% 9%;
+  --where-it-leads-border: 225 15% 16%;
+  --where-it-leads-accent: 220 70% 60%;
+
+  --execute-step-bg: 228 18% 10%;
+  --execute-step-border: 225 15% 16%;
+
+  --actions-footer-bg: 228 18% 8%;
+  --actions-footer-text: 220 10% 55%;
+}
+
+/* Utility classes for 6-section cards (will be used in TechniqueCard refactor) */
+.card-section {
+  padding: var(--card-inner-padding);
+  border-radius: 0.75rem;
+}
+
+/* ============================================
+   PWA / iOS Safe-Area + Filter Button System (Tailwind Integration Increment)
+   Mobile excellence + alignment with 6-section card tokens (per 2026-05-25 directive)
+   ============================================ */
+
+/* iOS PWA safe-area support (bottom nav, home indicator, Tailscale remote feel) */
+.pwa-safe-area {
+  padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+}
+
+/* Enhanced filter button system (TechniquesClient + design system consistency)
+   Touch-friendly, strong active states, mobile-first */
+.filter-button {
+  @apply px-3 py-1.5 text-sm rounded-full border transition-all active:scale-[0.985] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))];
+}
+.filter-button-active {
+  background-color: hsl(var(--foreground));
+  color: hsl(var(--background));
+  border-color: hsl(var(--foreground));
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+.filter-button:hover {
+  border-color: hsl(var(--border));
+}
+.filter-button:focus-visible {
+  @apply ring-offset-2 ring-offset-background;
+}
+
+.card-learn-principle {
+  background-color: hsl(var(--learn-principle-bg));
+  border: 1px solid hsl(var(--learn-principle-border));
+  color: hsl(var(--learn-principle-text));
+}
+
+.card-where-it-leads {
+  background-color: hsl(var(--where-it-leads-bg));
+  border-left: 3px solid hsl(var(--where-it-leads-accent));
+}
+
+.card-execute-step {
+  background-color: hsl(var(--execute-step-bg));
+  border: 1px solid hsl(var(--execute-step-border));
+}
+
+.card-actions-footer {
+  background-color: hsl(var(--actions-footer-bg));
+  color: hsl(var(--actions-footer-text));
+  padding: 0.75rem var(--card-inner-padding);
+  border-top: 1px solid hsl(var(--border));
+}
+
+/* ============================================
+   Additional Tailwind Design System Expansions (Phase 2)
+   Mobile/PWA + Component States + Typography Hierarchy
+   ============================================ */
+
+:root {
+  /* Typography hierarchy for cards (principles prominent) */
+  --text-principle: 0.9375rem;      /* ~15px - prominent for Learn principles */
+  --text-principle-weight: 600;
+  --text-body: 0.875rem;            /* 14px */
+  --text-small: 0.75rem;            /* 12px */
+
+  /* Mobile/PWA touch targets */
+  --touch-target-min: 44px;         /* iOS/Android minimum */
+  --filter-button-padding: 0.5rem 0.875rem;
+
+  /* Interactive states */
+  --filter-active-bg: 0 0% 10%;
+  --filter-active-text: 0 0% 100%;
+  --card-hover-lift: -0.5px;
+  --card-hover-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* Dark mode expansions */
+.dark {
+  --filter-active-bg: 0 0% 95%;
+  --filter-active-text: 0 0% 10%;
+}
+
+/* Filter button system (used in TechniquesClient) */
+.filter-button {
+  min-height: var(--touch-target-min);
+  padding: var(--filter-button-padding);
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  transition: all 0.1s ease;
+  touch-action: manipulation;
+}
+
+.filter-button-active {
+  background-color: hsl(var(--filter-active-bg));
+  color: hsl(var(--filter-active-text));
+  border-color: transparent;
+}
+
+.filter-button:hover:not(.filter-button-active) {
+  background-color: hsl(var(--muted));
+}
+
+.filter-button:active {
+  transform: scale(0.985);
+}
+
+/* Enhanced card utilities for 6-section hierarchy */
+.card-principle {
+  font-size: var(--text-principle);
+  font-weight: var(--text-principle-weight);
+  line-height: 1.4;
+}
+
+.card-body {
+  font-size: var(--text-body);
+  line-height: 1.5;
+}
+
+/* Mobile-first PWA improvements */
+@media (max-width: 640px) {
+  .card-section {
+    padding: 0.75rem;
+  }
+  
+  .filter-button {
+    min-height: 40px;
+    font-size: 0.6875rem;
+  }
+}
+
+/* High contrast / focus states for accessibility */
+.filter-button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* ============================================
+   Phase 3 Expansions — Full 6-Section Support + PWA Polish
+   ============================================ */
+
+:root {
+  /* Stronger hierarchy for the new card standard */
+  --section-label: 0.625rem;           /* 10px uppercase labels (Learn, Where It Leads, etc.) */
+  --section-label-tracking: 0.08em;
+
+  /* Mobile/PWA specific */
+  --pwa-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --card-mobile-padding: 0.875rem;
+}
+
+/* 6-section section labels (for TechniqueCard and detail pages) */
+.section-label {
+  font-size: var(--section-label);
+  letter-spacing: var(--section-label-tracking);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Improved card container using new tokens */
+.card-6section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-section-gap);
+}
+
+.card-6section > * {
+  scroll-margin-top: 1rem;
+}
+
+/* PWA bottom nav safe area support */
+@media (max-width: 768px) {
+  .pwa-content {
+    padding-bottom: calc(4rem + var(--pwa-safe-bottom));
+  }
+}
+
+/* TechniqueCard hover states using design system */
+.group:hover .card-where-it-leads {
+  border-left-color: hsl(var(--where-it-leads-accent));
+  background-color: hsl(var(--where-it-leads-bg) / 0.7);
 }

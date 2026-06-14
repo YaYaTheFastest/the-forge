@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forge • RAG Status Mock</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; }
+    .rag-red { background-color: #fee2e2; color: #991b1b; border-color: #f87171; }
+    .rag-yellow { background-color: #fef3c7; color: #92400e; border-color: #fbbf24; }
+    .rag-green { background-color: #dcfce7; color: #166534; border-color: #4ade80; }
+    .equipment-card { transition: transform 0.1s ease, box-shadow 0.1s ease; }
+    .equipment-card:active { transform: scale(0.985); }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200 p-6 max-w-3xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <div class="text-sm text-emerald-400 font-medium tracking-widest">THE FORGE</div>
+      <h1 class="text-4xl font-semibold tracking-tighter">Fleet Status</h1>
+      <p class="text-zinc-400 text-sm mt-1">Red / Yellow / Green • Big equipment only</p>
+    </div>
+    <div class="text-right">
+      <div class="text-xs text-zinc-500">Last updated</div>
+      <div class="font-mono text-sm">just now</div>
+    </div>
+  </div>
+
+  <!-- Proactive Banner -->
+  <div class="mb-6 bg-amber-900/30 border border-amber-700/50 rounded-3xl p-4 flex items-start gap-3">
+    <div class="text-2xl">⚠️</div>
+    <div class="flex-1">
+      <div class="font-semibold text-amber-400">Approaching due</div>
+      <div class="text-sm text-amber-300">JD2150 Hydraulic Service — entering 10% window (est. 12 hours)</div>
+      <div class="mt-2 text-xs">
+        <span class="px-3 py-1 bg-amber-800/60 hover:bg-amber-800 rounded-2xl cursor-pointer">Add to today's plan</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    
+    <!-- High Importance Equipment -->
+    <div class="equipment-card bg-zinc-900 border border-zinc-800 rounded-3xl p-5 cursor-pointer" onclick="showDetail('JD2150')">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="font-semibold text-xl tracking-tight">1987 John Deere 2150</div>
+          <div class="text-xs text-zinc-400">Compact Utility Tractor • Ranch Operations</div>
+          <div class="mt-1 text-xs font-mono text-zinc-500">1,842 hours</div>
+        </div>
+        <div class="px-4 py-1 rounded-2xl text-sm font-semibold border rag-red">RED</div>
+      </div>
+      <div class="mt-4 text-xs text-zinc-400">Oil &amp; Filter — overdue by 42h</div>
+      <div class="mt-1 text-xs text-zinc-400">Hydraulic Service — entering window</div>
+      <div class="mt-4 flex gap-2">
+        <div class="text-[10px] px-2 py-0.5 bg-red-950 text-red-400 rounded-xl">2 items due</div>
+      </div>
+    </div>
+
+    <div class="equipment-card bg-zinc-900 border border-zinc-800 rounded-3xl p-5 cursor-pointer" onclick="showDetail('KTM')">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="font-semibold text-xl tracking-tight">Yamaha TT-R110E (KTM)</div>
+          <div class="text-xs text-zinc-400">Dirt Bike • Ranch Operations</div>
+          <div class="mt-1 text-xs font-mono text-zinc-500">487 hours</div>
+        </div>
+        <div class="px-4 py-1 rounded-2xl text-sm font-semibold border rag-yellow">YELLOW</div>
+      </div>
+      <div class="mt-4 text-xs text-zinc-400">Basic Service — 18 hours until 10% window</div>
+      <div class="mt-4 flex gap-2">
+        <div class="text-[10px] px-2 py-0.5 bg-yellow-950 text-yellow-400 rounded-xl">1 item approaching</div>
+      </div>
+    </div>
+
+    <div class="equipment-card bg-zinc-900 border border-zinc-800 rounded-3xl p-5 cursor-pointer" onclick="showDetail('Woods')">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="font-semibold text-xl tracking-tight">72" Woods Mower</div>
+          <div class="text-xs text-zinc-400">PTO Mower • Ranch Operations</div>
+          <div class="mt-1 text-xs font-mono text-zinc-500">312 hours (on tractor)</div>
+        </div>
+        <div class="px-4 py-1 rounded-2xl text-sm font-semibold border rag-green">GREEN</div>
+      </div>
+      <div class="mt-4 text-xs text-zinc-400">PTO Gearbox service — healthy buffer (78h)</div>
+    </div>
+
+    <div class="equipment-card bg-zinc-900 border border-zinc-800 rounded-3xl p-5 cursor-pointer" onclick="showDetail('Stihl')">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="font-semibold text-xl tracking-tight">Stihl MS 261 C-M</div>
+          <div class="text-xs text-zinc-400">Chainsaw • Ranch Operations</div>
+          <div class="mt-1 text-xs font-mono text-zinc-500">—</div>
+        </div>
+        <div class="px-4 py-1 rounded-2xl text-sm font-semibold border rag-green">GREEN</div>
+      </div>
+      <div class="mt-4 text-xs text-zinc-400">Chain + bar maintenance current</div>
+    </div>
+
+  </div>
+
+  <div class="mt-8 text-center">
+    <button onclick="simulateLogHours()" 
+            class="px-6 py-3 bg-white text-black font-semibold rounded-3xl text-sm active:scale-[0.985]">
+      + Mark Complete + Log Hours
+    </button>
+    <div class="text-[10px] text-zinc-500 mt-3">Fast path for daily use • No Obsidian required</div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="modal" onclick="hideModal()" class="hidden fixed inset-0 bg-black/70 flex items-end md:items-center justify-center">
+    <div onclick="event.stopImmediatePropagation()" class="bg-zinc-900 w-full md:w-[420px] rounded-t-3xl md:rounded-3xl p-6 border border-zinc-700">
+      <div id="modal-content"></div>
+      
+      <div class="mt-6 flex gap-3">
+        <button onclick="hideModal()" 
+                class="flex-1 py-3 rounded-2xl border border-zinc-700 text-sm">Close</button>
+        <button onclick="logHoursFromModal()" 
+                class="flex-1 py-3 rounded-2xl bg-emerald-600 text-white text-sm font-semibold">
+          Mark Complete + Log Hours
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showDetail(slug) {
+      const modal = document.getElementById('modal');
+      const content = document.getElementById('modal-content');
+      
+      let html = '';
+      
+      if (slug === 'JD2150') {
+        html = `
+          <div class="flex items-center gap-3">
+            <div class="text-3xl">🚜</div>
+            <div>
+              <div class="font-semibold text-2xl">1987 John Deere 2150</div>
+              <div class="text-red-400 text-sm font-medium">RED — 2 items due</div>
+            </div>
+          </div>
+          <div class="mt-6 space-y-3 text-sm">
+            <div class="flex justify-between py-2 border-b border-zinc-800">
+              <div>Oil & Filter Change</div>
+              <div class="font-mono text-red-400">Overdue 42h</div>
+            </div>
+            <div class="flex justify-between py-2 border-b border-zinc-800">
+              <div>Hydraulic Service</div>
+              <div class="font-mono text-amber-400">Entering window</div>
+            </div>
+          </div>
+          <div class="mt-4 text-xs text-zinc-400">Current hours: 1,842</div>
+        `;
+      } else if (slug === 'KTM') {
+        html = `
+          <div class="flex items-center gap-3">
+            <div class="text-3xl">🏍️</div>
+            <div>
+              <div class="font-semibold text-2xl">Yamaha TT-R110E</div>
+              <div class="text-amber-400 text-sm font-medium">YELLOW — 1 item approaching</div>
+            </div>
+          </div>
+          <div class="mt-6">
+            <div class="text-sm">Basic Service (valves, oil, chain, bearings)</div>
+            <div class="text-amber-400 text-sm mt-1">18 hours until 10% window</div>
+          </div>
+        `;
+      } else {
+        html = `<div class="text-lg font-semibold">Healthy — no urgent items</div>`;
+      }
+      
+      content.innerHTML = html;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+    
+    function hideModal() {
+      const modal = document.getElementById('modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    
+    function logHoursFromModal() {
+      hideModal();
+      simulateLogHours();
+    }
+    
+    function simulateLogHours() {
+      const toast = document.createElement('div');
+      toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-3xl text-sm shadow-xl flex items-center gap-2`;
+      toast.innerHTML = `✅ Hours logged. RAG statuses recalculated.`;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.transition = 'all 0.2s';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 200);
+      }, 1600);
+    }
+    
+    // Tailwind script
+    console.log('%c[Forge Mock] RAG visualization ready', 'color:#444');
+  </script>
+</body>
+</html>

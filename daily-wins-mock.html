@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Wins • The Forge (Mock)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --font-sans: 'Inter', system_ui, sans-serif;
+        }
+        
+        body {
+            font-family: var(--font-sans);
+        }
+        
+        .forge-header {
+            font-family: 'Space Grotesk', var(--font-sans);
+        }
+
+        .card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+        }
+
+        .forge-pill {
+            font-size: 0.75rem;
+            padding-left: 0.65rem;
+            padding-right: 0.65rem;
+            padding-top: 0.1rem;
+            padding-bottom: 0.1rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .section-header {
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .win-item {
+            transition: all 0.2s ease;
+        }
+
+        .win-item.completed {
+            opacity: 0.75;
+        }
+
+        .mock-modal {
+            animation: fadeInScale 0.2s ease forwards;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .forge-bg {
+            background: #fafafa;
+        }
+        
+        .column-header {
+            font-size: 0.875rem;
+            font-weight: 700;
+            letter-spacing: 0.025em;
+        }
+    </style>
+</head>
+<body class="bg-zinc-100 font-sans">
+    <!-- Top Nav -->
+    <div class="border-b bg-white">
+        <div class="max-w-screen-2xl mx-auto px-6 h-14 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-black rounded-xl flex items-center justify-center">
+                        <span class="text-white text-lg font-bold">F</span>
+                    </div>
+                    <div>
+                        <span class="font-semibold text-xl tracking-tighter">The Forge</span>
+                    </div>
+                </div>
+                <div class="text-xs px-2 py-0.5 bg-zinc-100 rounded-full text-zinc-500 font-medium">v0.9</div>
+            </div>
+            
+            <div class="flex items-center gap-4 text-sm">
+                <div class="flex items-center gap-2 text-zinc-500">
+                    <div class="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                    <span class="font-medium">Darren • Tailscale</span>
+                </div>
+                <div class="h-6 w-px bg-zinc-200"></div>
+                <div class="text-zinc-400 text-xs">Feb 3, 2026</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-screen-2xl mx-auto px-6 py-8">
+        
+        <!-- Header -->
+        <div class="flex items-end justify-between mb-8">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <span class="text-4xl">🏆</span>
+                    <h1 class="text-5xl font-semibold tracking-tighter">Daily Wins</h1>
+                </div>
+                <div class="text-lg text-zinc-600">February 3, 2026 • Monday</div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <!-- Yesterday's List -->
+                <div onclick="showYesterdaysList()" 
+                     class="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-2xl text-sm cursor-pointer transition-colors">
+                    <i class="fa-solid fa-history text-zinc-400"></i>
+                    <span class="font-medium text-zinc-600">Yesterday's List</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Four equal columns: Fitness | Equipment | Chores | Plan -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            <!-- FITNESS SUGGESTIONS -->
+            <div class="bg-white border border-zinc-200 rounded-3xl p-4 flex flex-col">
+                <div class="flex items-center gap-2 mb-3 px-1">
+                    <div class="w-7 h-7 bg-emerald-100 rounded-2xl flex items-center justify-center">
+                        <i class="fa-solid fa-dumbbell text-emerald-600"></i>
+                    </div>
+                    <div class="font-bold text-lg tracking-tight">Fitness</div>
+                </div>
+                
+                <div class="space-y-1.5 mb-4 flex-1">
+                    <!-- BJJ Class is always available as a selectable option -->
+                    <div onclick="addToDailyList('Fitness', 'BJJ Class', 'class')" 
+                         class="group flex items-center justify-between p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl cursor-pointer transition-colors">
+                        <div>
+                            <div class="font-semibold text-sm">BJJ Class</div>
+                            <div class="text-[10px] text-emerald-600">60–90 min</div>
+                        </div>
+                        <button class="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-emerald-200 hover:bg-emerald-50 rounded-xl font-medium text-emerald-700 transition-all">Add</button>
+                    </div>
+                    
+                    <!-- 30 minute jog always available -->
+                    <div onclick="addToDailyList('Fitness', '30 Minute Jog', 'cardio')" 
+                         class="group flex items-center justify-between p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl cursor-pointer transition-colors">
+                        <div>
+                            <div class="font-semibold text-sm">30 Minute Jog</div>
+                            <div class="text-[10px] text-emerald-600">Cardio</div>
+                        </div>
+                        <button class="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-emerald-200 hover:bg-emerald-50 rounded-xl font-medium text-emerald-700 transition-all">Add</button>
+                    </div>
+                    
+                    <!-- 5 Minutes Cold Tub always available -->
+                    <div onclick="addToDailyList('Fitness', '5 Minutes Cold Tub', 'recovery')" 
+                         class="group flex items-center justify-between p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl cursor-pointer transition-colors">
+                        <div>
+                            <div class="font-semibold text-sm">5 Minutes Cold Tub</div>
+                            <div class="text-[10px] text-emerald-600">Recovery</div>
+                        </div>
+                        <button class="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-emerald-200 hover:bg-emerald-50 rounded-xl font-medium text-emerald-700 transition-all">Add</button>
+                    </div>
+                    
+                    <div onclick="addToDailyList('Fitness', '10-Minute BJJ Mobility', '10min')" 
+                         class="group flex items-center justify-between p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl cursor-pointer transition-colors">
+                        <div>
+                            <div class="font-semibold text-sm">10-Min BJJ Mobility</div>
+                            <div class="text-[10px] text-emerald-600">Mobility Protocol</div>
+                        </div>
+                        <button class="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-emerald-200 hover:bg-emerald-50 rounded-xl font-medium text-emerald-700 transition-all">Add</button>
+                    </div>
+                    
+                    <div onclick="addToDailyList('Fitness', 'S&S 24kg (100 swings)', 'strength')" 
+                         class="group flex items-center justify-between p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl cursor-pointer transition-colors">
+                        <div>
+                            <div class="font-semibold text-sm">S&amp;S 24kg • 100 swings</div>
+                            <div class="text-[10px] text-emerald-600">StrongFirst Protocol</div>
+                        </div>
+                        <button class="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-emerald-200 hover:bg-emerald-50 rounded-xl font-medium text-emerald-700 transition-all">Add</button>
+                    </div>
+                    
+                    <div onclick="addToDailyList('Fitness', '15-Min Comprehensive Mobility', 'mobility')" 
+                         class="group flex items-center justify-between p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl cursor-pointer transition-colors">
+                        <div>
+                            <div class="font-semibold text-sm">15-Min Comprehensive Mobility</div>
+                            <div class="text-[10px] text-emerald-600">Mobility Protocol</div>
+                        </div>
+                        <button class="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-emerald-200 hover:bg-emerald-50 rounded-xl font-medium text-emerald-700 transition-all">Add</button>
+                    </div>
+                    
+                    <div onclick="addToDailyList('Fitness', 'Cold Plunge (3 min)', 'recovery')" 
+                         class="group flex items-center justify-between p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl cursor-pointer transition-colors">
+                        <div>
+                            <div class="font-semibold text-sm">Cold Plunge • 3 min</div>
+                            <div class="text-[10px] text-emerald-600">Recovery</div>
+                        </div>
+                        <button class="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-emerald-200 hover:bg-emerald-50 rounded-xl font-medium text-emerald-700 transition-all">Add</button>
+                    </div>
+                    
+                    <div onclick="addToDailyList('Fitness', '5-Min BJJ Mobility', '5min')" 
+                         class="group flex items-center justify-between p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl cursor-pointer transition-colors">
+                        <div>
+                            <div class="font-semibold text-sm">5-Min BJJ Mobility</div>
+                            <div class="text-[10px] text-emerald-600">Quick Protocol</div>
+                        </div>
+                        <button class="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-emerald-200 hover:bg-emerald-50 rounded-xl font-medium text-emerald-700 transition-all">Add</button>
+                    </div>
+                    
+                    <div onclick="addToDailyList('Fitness', 'Kettlebell Clean + Press (5×5)', 'strength')" 
+                         class="group flex items-center justify-between p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl cursor-pointer transition-colors">
+                        <div>
+                            <div class="font-semibold text-sm">Kettlebell Clean + Press</div>
+                            <div class="text-[10px] text-emerald-600">5×5 each side</div>
+                        </div>
+                        <button class="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-emerald-200 hover:bg-emerald-50 rounded-xl font-medium text-emerald-700 transition-all">Add</button>
+                    </div>
+                    
+                    <div onclick="addToDailyList('Fitness', 'Hill Sprints (6 rounds)', 'conditioning')" 
+                         class="group flex items-center justify-between p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl cursor-pointer transition-colors">
+                        <div>
+                            <div class="font-semibold text-sm">Hill Sprints • 6 rounds</div>
+                            <div class="text-[10px] text-emerald-600">Conditioning</div>
+                        </div>
+                        <button class="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-emerald-200 hover:bg-emerald-50 rounded-xl font-medium text-emerald-700 transition-all">Add</button>
+                    </div>
+                </div>
+                
+                <!-- Ad-hoc for Fitness -->
+                <div onclick="showAdhocModal('Fitness')" 
+                     class="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 text-xs font-semibold px-3 py-2 border border-dashed border-emerald-200 hover:border-emerald-300 rounded-2xl cursor-pointer transition-colors mt-auto">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Log ad-hoc fitness win</span>
+                </div>
+            </div>
+            
+            <!-- EQUIPMENT SUGGESTIONS (strict 10% rule only — low noise) -->
+            <div class="bg-white border border-zinc-200 rounded-3xl p-4 flex flex-col">
+                <div class="flex items-center gap-2 mb-1 px-1">
+                    <div class="w-7 h-7 bg-amber-100 rounded-2xl flex items-center justify-center">
+                        <i class="fa-solid fa-tools text-amber-600"></i>
+                    </div>
+                    <div class="font-bold text-lg tracking-tight">Equipment</div>
+                </div>
+                <div class="text-[10px] text-amber-600 px-1 mb-2">Only items inside the 10% maintenance window</div>
+                
+                <div class="space-y-1.5 mb-4 flex-1">
+                    <!-- KTM is due for basic service (user confirmed) -->
+                    <div class="group flex items-center justify-between p-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-100 rounded-2xl transition-colors">
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-sm">TTR110 (KTM) — Basic Service</div>
+                            <div class="text-[10px] text-amber-600">Due • Update hours after service</div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="showEquipmentCard('KTM TTR110', 'Basic Service'); event.stopImmediatePropagation();" 
+                                    class="opacity-60 group-hover:opacity-100 px-2 py-0.5 text-[10px] bg-white border border-amber-200 hover:bg-amber-50 rounded-xl font-medium text-amber-700 transition-all">
+                                View notes
+                            </button>
+                            <button onclick="addToDailyList('Equipment', 'TTR110 (KTM) — Basic Service', 'maintenance'); event.stopImmediatePropagation();" 
+                                    class="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-amber-200 hover:bg-amber-50 rounded-xl font-medium text-amber-700 transition-all">
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- JD2150 qualifies under 10% rule -->
+                    <div class="group flex items-center justify-between p-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-100 rounded-2xl transition-colors">
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-sm">JD2150 — Oil &amp; Filter</div>
+                            <div class="text-[10px] text-amber-600">1,842h • 10% window • Update hours</div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="showEquipmentCard('1987 John Deere 2150', 'Oil + Filter Change'); event.stopImmediatePropagation();" 
+                                    class="opacity-60 group-hover:opacity-100 px-2 py-0.5 text-[10px] bg-white border border-amber-200 hover:bg-amber-50 rounded-xl font-medium text-amber-700 transition-all">
+                                View notes
+                            </button>
+                            <button onclick="addToDailyList('Equipment', 'JD2150 — Oil &amp; Filter', 'maintenance'); event.stopImmediatePropagation();" 
+                                    class="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-amber-200 hover:bg-amber-50 rounded-xl font-medium text-amber-700 transition-all">
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Second John Deere also near window (example of real 10% filtering) -->
+                    <div class="group flex items-center justify-between p-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-100 rounded-2xl transition-colors">
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-sm">1987 JD 2150 — Hydraulic Service</div>
+                            <div class="text-[10px] text-amber-600">Near due • Logs + updates hours</div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="showEquipmentCard('1987 John Deere 2150', 'Hydraulic Service'); event.stopImmediatePropagation();" 
+                                    class="opacity-60 group-hover:opacity-100 px-2 py-0.5 text-[10px] bg-white border border-amber-200 hover:bg-amber-50 rounded-xl font-medium text-amber-700 transition-all">
+                                View notes
+                            </button>
+                            <button onclick="addToDailyList('Equipment', '1987 JD 2150 — Hydraulic Service', 'maintenance'); event.stopImmediatePropagation();" 
+                                    class="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-amber-200 hover:bg-amber-50 rounded-xl font-medium text-amber-700 transition-all">
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ad-hoc for Equipment -->
+                <div onclick="showAdhocModal('Equipment')" 
+                     class="flex items-center gap-2 text-amber-600 hover:text-amber-700 text-xs font-semibold px-3 py-2 border border-dashed border-amber-200 hover:border-amber-300 rounded-2xl cursor-pointer transition-colors mt-auto">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Log ad-hoc maintenance</span>
+                </div>
+            </div>
+            
+            <!-- CHORES SUGGESTIONS (low noise - user will expand with Hermes later) -->
+            <div class="bg-white border border-zinc-200 rounded-3xl p-4 flex flex-col">
+                <div class="flex items-center gap-2 mb-3 px-1">
+                    <div class="w-7 h-7 bg-sky-100 rounded-2xl flex items-center justify-center">
+                        <i class="fa-solid fa-list-check text-sky-600"></i>
+                    </div>
+                    <div class="font-bold text-lg tracking-tight">Chores</div>
+                </div>
+                
+                <div class="space-y-1.5 mb-4 flex-1">
+                    <div onclick="addToDailyList('Chores', 'Straighten Office', 'chore')" 
+                         class="group flex items-center justify-between p-2.5 bg-sky-50 hover:bg-sky-100 border border-sky-100 rounded-2xl cursor-pointer transition-colors">
+                        <div>
+                            <div class="font-semibold text-sm">Straighten Office</div>
+                        </div>
+                        <button class="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-sky-200 hover:bg-sky-50 rounded-xl font-medium text-sky-700 transition-all">Add</button>
+                    </div>
+                    
+                    <div onclick="addToDailyList('Chores', 'Put tools away', 'chore')" 
+                         class="group flex items-center justify-between p-2.5 bg-sky-50 hover:bg-sky-100 border border-sky-100 rounded-2xl cursor-pointer transition-colors">
+                        <div>
+                            <div class="font-semibold text-sm">Put tools away</div>
+                        </div>
+                        <button class="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-sky-200 hover:bg-sky-50 rounded-xl font-medium text-sky-700 transition-all">Add</button>
+                    </div>
+                </div>
+                
+                <!-- Ad-hoc for Chores -->
+                <div onclick="showAdhocModal('Chores')" 
+                     class="flex items-center gap-2 text-sky-600 hover:text-sky-700 text-xs font-semibold px-3 py-2 border border-dashed border-sky-200 hover:border-sky-300 rounded-2xl cursor-pointer transition-colors mt-auto">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Log ad-hoc chore</span>
+                </div>
+            </div>
+            
+            <!-- TODAY'S PLAN (rightmost column) -->
+            <div class="bg-white border border-zinc-200 rounded-3xl p-4 flex flex-col">
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 bg-zinc-900 rounded-2xl flex items-center justify-center">
+                            <i class="fa-solid fa-list-check text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-lg tracking-tight">Today's Plan</div>
+                            <div id="plan-count" class="text-[10px] text-zinc-500 font-mono">0 items</div>
+                        </div>
+                    </div>
+                    <div onclick="clearList()" class="text-xs text-red-600 hover:text-red-700 font-medium cursor-pointer flex items-center gap-1 px-2 py-1 hover:bg-red-50 rounded-xl transition-colors">
+                        <i class="fa-solid fa-times"></i>
+                        <span class="hidden lg:inline">Clear</span>
+                    </div>
+                </div>
+                
+                <div id="todays-plan" 
+                     class="flex-1 min-h-[420px] border border-dashed border-zinc-300 bg-zinc-50/50 rounded-3xl p-3 space-y-2 overflow-auto">
+                    <!-- Populated by JS -->
+                    <div class="flex flex-col items-center justify-center h-full text-center text-zinc-400 py-12">
+                        <i class="fa-solid fa-list-check text-3xl mb-3"></i>
+                        <p class="text-sm">Your committed wins<br>will appear here.</p>
+                    </div>
+                </div>
+                
+                <div class="mt-3 text-[10px] text-zinc-400 px-1 leading-tight">
+                    Check off wins as you complete them.<br>Add short notes for Hermes.
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Yesterday's List (visible until cleared) -->
+        <div id="yesterday-section" class="mt-8 border border-zinc-200 bg-white rounded-3xl p-5 hidden">
+            <div class="flex justify-between items-center mb-3">
+                <div class="font-semibold">Yesterday (Feb 2)</div>
+                <div onclick="hideYesterdaysList()" class="text-xs text-zinc-400 hover:text-zinc-600 cursor-pointer">Hide</div>
+            </div>
+            <div class="text-sm space-y-1 text-zinc-600">
+                <div class="flex items-center gap-2">• BJJ Class <span class="text-emerald-600">✓</span></div>
+                <div class="flex items-center gap-2">• JD2150 Oil &amp; Filter <span class="text-emerald-600">✓</span> <span class="text-xs">(hours updated on card)</span></div>
+                <div class="flex items-center gap-2">• Straighten Office <span class="text-emerald-600">✓</span></div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <!-- Ad-hoc Modal -->
+    <div id="adhoc-modal" onclick="if (event.target.id === 'adhoc-modal') hideAdhocModal()" class="hidden fixed inset-0 bg-black/40 z-[100] flex items-center justify-center">
+        <div onclick="event.stopImmediatePropagation()" class="bg-white w-full max-w-md mx-4 rounded-3xl p-6">
+            <div id="adhoc-title" class="font-semibold text-xl mb-4"></div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs text-zinc-500 block mb-1">What did you do?</label>
+                    <input id="adhoc-input" type="text" class="w-full border rounded-2xl px-4 py-3 text-sm" placeholder="e.g. Cleaned the generator">
+                </div>
+                
+                <div>
+                    <label class="text-xs text-zinc-500 block mb-1">Quick note (optional)</label>
+                    <textarea id="adhoc-note" class="w-full border rounded-2xl px-4 py-3 text-sm h-20" placeholder="Felt good. Took 25 minutes."></textarea>
+                </div>
+            </div>
+            
+            <div class="flex gap-3 mt-6">
+                <button onclick="hideAdhocModal()" 
+                        class="flex-1 py-3 rounded-2xl border text-sm font-medium">Cancel</button>
+                <button onclick="logAdhocWin()" 
+                        class="flex-1 py-3 rounded-2xl bg-zinc-900 text-white text-sm font-semibold">Log Win</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Equipment Card Instructions Modal (simulates clicking through to the actual Equipment Card) -->
+    <div id="equipment-card-modal" onclick="if (event.target.id === 'equipment-card-modal') hideEquipmentCard()" class="hidden fixed inset-0 bg-black/40 z-[110] flex items-center justify-center">
+        <div onclick="event.stopImmediatePropagation()" class="bg-white w-full max-w-lg mx-4 rounded-3xl p-6">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <div id="equip-card-title" class="font-semibold text-xl"></div>
+                    <div id="equip-card-subtitle" class="text-sm text-amber-600"></div>
+                </div>
+                <button onclick="hideEquipmentCard()" class="text-zinc-400 hover:text-zinc-600 text-xl leading-none">×</button>
+            </div>
+            
+            <div class="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-4">
+                <div class="text-xs font-semibold text-amber-700 mb-2">SERVICE NOTES (from Equipment Card)</div>
+                <div id="equip-card-instructions" class="text-sm text-zinc-700 leading-relaxed"></div>
+            </div>
+            
+            <div class="text-[11px] text-zinc-500 px-1">
+                In the real app this would open the full Equipment Card at /equipment/[slug] with all photos, history, and the complete Hermes prompt.
+            </div>
+            
+            <div class="mt-5 flex gap-3">
+                <button onclick="hideEquipmentCard()" 
+                        class="flex-1 py-3 rounded-2xl border text-sm font-medium">Close</button>
+                <button onclick="addFromCardModal()" 
+                        class="flex-1 py-3 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold">Add to today's plan</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Tailwind script
+        function initializeTailwind() {
+            document.documentElement.style.setProperty('--accent', '#18181b');
+        }
+        
+        let todaysPlan = [];
+        let yesterdayVisible = true;
+        
+        function updatePlanCount() {
+            const countEl = document.getElementById('plan-count');
+            if (countEl) {
+                countEl.textContent = `${todaysPlan.length} item${todaysPlan.length === 1 ? '' : 's'}`;
+            }
+        }
+        
+        function renderTodaysPlan() {
+            const container = document.getElementById('todays-plan');
+            container.innerHTML = '';
+            
+            if (todaysPlan.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-48 text-center text-zinc-400">
+                        <i class="fa-solid fa-list-check text-3xl mb-3"></i>
+                        <p class="text-sm">Your daily plan will appear here.<br>Add items from the three suggestion columns.</p>
+                    </div>
+                `;
+                updatePlanCount();
+                return;
+            }
+            
+            todaysPlan.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = `win-item flex items-start gap-3 p-3 rounded-2xl border ${item.completed ? 'bg-zinc-50 border-zinc-200' : 'bg-white border-zinc-200'}`;
+                
+                div.innerHTML = `
+                    <div class="pt-1">
+                        <input type="checkbox" 
+                               ${item.completed ? 'checked' : ''} 
+                               onchange="toggleComplete(${index}, this.checked)"
+                               class="w-4 h-4 accent-black cursor-pointer">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="font-medium text-sm ${item.completed ? 'line-through text-zinc-400' : ''}">${item.name}</span>
+                            <span class="text-[10px] px-1.5 py-px rounded bg-zinc-100 text-zinc-500 font-mono">${item.category}</span>
+                        </div>
+                        
+                        ${item.note ? `
+                            <div class="text-xs text-zinc-500 mt-1 italic">"${item.note}"</div>
+                        ` : ''}
+                        
+                        <div class="flex items-center gap-2 mt-2">
+                            ${!item.completed ? `
+                                <button onclick="addNote(${index})" 
+                                        class="text-[10px] px-2 py-0.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-lg font-medium">
+                                    + Note
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            });
+            
+            updatePlanCount();
+        }
+        
+        function addToDailyList(category, name, type = 'general') {
+            // Check if already in plan
+            const exists = todaysPlan.find(item => item.name === name && item.category === category);
+            if (exists) {
+                alert("Already in today's plan.");
+                return;
+            }
+            
+            todaysPlan.push({
+                id: Date.now(),
+                name: name,
+                category: category,
+                type: type,
+                completed: false,
+                note: null
+            });
+            
+            renderTodaysPlan();
+            
+            // Subtle toast
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-6 right-6 bg-zinc-900 text-white px-4 py-2 rounded-2xl text-sm shadow-lg flex items-center gap-2`;
+            toast.innerHTML = `<span>Added: ${name}</span>`;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 1400);
+        }
+        
+        function toggleComplete(index, isComplete) {
+            todaysPlan[index].completed = isComplete;
+            
+            if (isComplete && !todaysPlan[index].note) {
+                // Prompt for note on first completion
+                setTimeout(() => {
+                    const note = prompt("Quick note? (optional — for Hermes)", "");
+                    if (note !== null) {
+                        todaysPlan[index].note = note;
+                    }
+                    renderTodaysPlan();
+                }, 300);
+            } else {
+                renderTodaysPlan();
+            }
+            
+            // Special handling for Equipment maintenance wins
+            if (isComplete && todaysPlan[index].category === 'Equipment' && todaysPlan[index].type === 'maintenance') {
+                setTimeout(() => {
+                    const hours = prompt("New current hours on the equipment? (This will update the Equipment Card)", "");
+                    if (hours) {
+                        const note = todaysPlan[index].note || "Maintenance completed via Daily Wins";
+                        alert(`✅ Hours updated on Equipment Card to ${hours}. (In real app this would call updateShopEquipmentHours)`);
+                        
+                        // In real app: call server action
+                        console.log(`[MOCK] Updated Equipment Card hours to ${hours} with note: ${note}`);
+                    }
+                }, 600);
+            }
+        }
+        
+        function addNote(index) {
+            const currentNote = todaysPlan[index].note || '';
+            const newNote = prompt("Add note for this win (for Hermes):", currentNote);
+            
+            if (newNote !== null) {
+                todaysPlan[index].note = newNote;
+                renderTodaysPlan();
+            }
+        }
+        
+        function showAdhocModal(category) {
+            const modal = document.getElementById('adhoc-modal');
+            const title = document.getElementById('adhoc-title');
+            
+            title.textContent = `Log ad-hoc ${category} win`;
+            modal.dataset.category = category;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            document.getElementById('adhoc-input').focus();
+        }
+        
+        function hideAdhocModal() {
+            const modal = document.getElementById('adhoc-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+            
+            // Clear inputs
+            document.getElementById('adhoc-input').value = '';
+            document.getElementById('adhoc-note').value = '';
+        }
+        
+        function logAdhocWin() {
+            const modal = document.getElementById('adhoc-modal');
+            const category = modal.dataset.category;
+            const input = document.getElementById('adhoc-input').value.trim();
+            const note = document.getElementById('adhoc-note').value.trim();
+            
+            if (!input) {
+                alert("Please enter what you did.");
+                return;
+            }
+            
+            todaysPlan.push({
+                id: Date.now(),
+                name: input,
+                category: category,
+                type: 'ad-hoc',
+                completed: true,
+                note: note || null
+            });
+            
+            hideAdhocModal();
+            renderTodaysPlan();
+            
+            // Show confirmation
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-6 right-6 bg-emerald-600 text-white px-4 py-2 rounded-2xl text-sm shadow-lg`;
+            toast.innerHTML = `Logged ad-hoc ${category} win`;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 1600);
+        }
+        
+        function clearList() {
+            if (todaysPlan.length === 0) return;
+            
+            if (confirm("Clear today's entire plan? This is a hard reset.")) {
+                todaysPlan = [];
+                document.getElementById('todays-plan').innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-48 text-center text-zinc-400">
+                        <i class="fa-solid fa-list-check text-3xl mb-3"></i>
+                        <p class="text-sm">Plan cleared.<br>Start fresh.</p>
+                    </div>
+                `;
+                updatePlanCount();
+                
+                // Hide yesterday's section after clear (simulating hard reset)
+                document.getElementById('yesterday-section').classList.add('hidden');
+            }
+        }
+        
+        function showYesterdaysList() {
+            const section = document.getElementById('yesterday-section');
+            section.classList.remove('hidden');
+            section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        function hideYesterdaysList() {
+            document.getElementById('yesterday-section').classList.add('hidden');
+        }
+        
+        // Equipment Card preview (answers "will it reference the card + show instructions?")
+        let lastCardItem = null;
+        
+        function showEquipmentCard(equipmentName, serviceType) {
+            const modal = document.getElementById('equipment-card-modal');
+            const title = document.getElementById('equip-card-title');
+            const subtitle = document.getElementById('equip-card-subtitle');
+            const instructions = document.getElementById('equip-card-instructions');
+            
+            title.textContent = equipmentName;
+            subtitle.textContent = serviceType;
+            
+            // Realistic sample instructions pulled from the Equipment Card
+            let notes = '';
+            if (equipmentName.includes('KTM') || equipmentName.includes('TTR110')) {
+                notes = 'Basic service: Change engine oil + filter, check valve clearances, inspect air filter, grease steering head bearings, check chain tension + lube, test all lights and kill switch. Record hours after service.';
+            } else if (equipmentName.includes('1987')) {
+                notes = 'Hydraulic service: Replace hydraulic filter, check fluid level and condition, inspect hoses for cracking, test 3-point hitch and loader operation. Bleed air from system if needed. Update current hours on card.';
+            } else {
+                notes = 'Oil + Filter: Drain oil, replace filter, refill with correct viscosity. Check for leaks. Inspect air filter and clean if dirty. Torque drain plug to spec. Log new hour reading on the Equipment Card.';
+            }
+            
+            instructions.innerHTML = notes;
+            lastCardItem = { name: `${equipmentName} — ${serviceType}`, type: 'maintenance' };
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        
+        function hideEquipmentCard() {
+            const modal = document.getElementById('equipment-card-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+        
+        function addFromCardModal() {
+            if (!lastCardItem) return;
+            hideEquipmentCard();
+            addToDailyList('Equipment', lastCardItem.name, lastCardItem.type);
+        }
+        
+        // Initialize
+        function init() {
+            initializeTailwind();
+            
+            // Seed a couple of demo items (BJJ Class is available in Fitness suggestions but not pre-loaded)
+            todaysPlan = [
+                {
+                    id: 1,
+                    name: "30 Minute Jog",
+                    category: "Fitness",
+                    type: "cardio",
+                    completed: false,
+                    note: null
+                },
+                {
+                    id: 2,
+                    name: "JD2150 — Oil & Filter",
+                    category: "Equipment",
+                    type: "maintenance",
+                    completed: false,
+                    note: null
+                }
+            ];
+            
+            renderTodaysPlan();
+            
+            // Show yesterday section by default (as per requirement)
+            document.getElementById('yesterday-section').classList.remove('hidden');
+            
+            // Keyboard support for demo
+            document.addEventListener('keydown', function(e) {
+                if (e.key === "?" && document.activeElement.tagName === "BODY") {
+                    e.preventDefault();
+                    const firstSuggestion = document.querySelector('.group');
+                    if (firstSuggestion) firstSuggestion.click();
+                }
+            });
+            
+            console.log('%c[Mock] Daily Wins UI ready. This is a high-fidelity visual prototype.', 'color:#666');
+        }
+        
+        // Boot
+        window.onload = init;
+    </script>
+</body>
+</html>

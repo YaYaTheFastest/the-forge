@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Mat (BJJ) • The Forge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --font-sans: 'Inter', system_ui, sans-serif;
+        }
+        
+        body {
+            font-family: var(--font-sans);
+        }
+        
+        .forge-header {
+            font-family: 'Space Grotesk', var(--font-sans);
+        }
+
+        .mat-tab {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mat-tab.active {
+            background-color: #18181b;
+            color: white;
+            border-color: #18181b;
+        }
+
+        .technique-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .technique-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+        }
+
+        .forge-bg {
+            background: #fafafa;
+        }
+
+        .section-header {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body class="bg-zinc-100 font-sans">
+    <!-- Top Nav -->
+    <div class="border-b bg-white">
+        <div class="max-w-screen-2xl mx-auto px-6 h-14 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-black rounded-xl flex items-center justify-center">
+                        <span class="text-white text-lg font-bold">F</span>
+                    </div>
+                    <div>
+                        <span class="font-semibold text-xl tracking-tighter">The Forge</span>
+                    </div>
+                </div>
+                <div class="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-medium">The Mat (BJJ)</div>
+            </div>
+            
+            <div class="hidden md:flex items-center gap-4 text-sm">
+                <div class="flex items-center gap-2 text-zinc-500">
+                    <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <span class="font-medium">Primary Subdomain</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-screen-2xl mx-auto px-6 py-8">
+        
+        <!-- Hero -->
+        <div class="text-center mb-10">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-red-100 text-red-700 rounded-2xl text-sm font-semibold mb-4">
+                <i class="fa-solid fa-chess-knight"></i>
+                <span>PRIMARY SUBDOMAIN</span>
+            </div>
+            
+            <h1 class="text-6xl font-semibold tracking-tighter mb-3">The Mat (BJJ)</h1>
+            <p class="text-2xl text-zinc-600 max-w-2xl mx-auto">A complete, high-signal training system built on top of a personal Obsidian vault.</p>
+            
+            <div class="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm">
+                <div class="px-4 py-2 bg-white border border-zinc-200 rounded-2xl flex items-center gap-2">
+                    <i class="fa-solid fa-book text-red-600"></i>
+                    <span><strong>200+</strong> techniques</span>
+                </div>
+                <div class="px-4 py-2 bg-white border border-zinc-200 rounded-2xl flex items-center gap-2">
+                    <i class="fa-solid fa-star text-amber-500"></i>
+                    <span><strong>GB1</strong> curriculum mapped</span>
+                </div>
+                <div class="px-4 py-2 bg-white border border-zinc-200 rounded-2xl flex items-center gap-2">
+                    <i class="fa-solid fa-sync text-emerald-600"></i>
+                    <span>Live from vault • Editable notes</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- The Mat Hub Navigation -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-3 px-1">
+                <div class="text-sm font-semibold tracking-widest text-red-600">FOUR CORE CAPABILITIES</div>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="mat-tabs">
+                <button onclick="showMatSection('techniques')" class="mat-tab active px-4 py-3 bg-white border border-zinc-200 hover:border-zinc-300 rounded-2xl text-left flex items-center gap-3">
+                    <div class="text-2xl">📚</div>
+                    <div>
+                        <div class="font-semibold">Techniques</div>
+                        <div class="text-xs text-zinc-500">Full library + personal notes</div>
+                    </div>
+                </button>
+                
+                <button onclick="showMatSection('routines')" class="mat-tab px-4 py-3 bg-white border border-zinc-200 hover:border-zinc-300 rounded-2xl text-left flex items-center gap-3">
+                    <div class="text-2xl">🔄</div>
+                    <div>
+                        <div class="font-semibold">Routines</div>
+                        <div class="text-xs text-zinc-500">Intelligent session generator</div>
+                    </div>
+                </button>
+                
+                <button onclick="showMatSection('mindmaps')" class="mat-tab px-4 py-3 bg-white border border-zinc-200 hover:border-zinc-300 rounded-2xl text-left flex items-center gap-3">
+                    <div class="text-2xl">🗺️</div>
+                    <div>
+                        <div class="font-semibold">Mind Maps</div>
+                        <div class="text-xs text-zinc-500">Visual concept mapping</div>
+                    </div>
+                </button>
+                
+                <button onclick="showMatSection('curriculum')" class="mat-tab px-4 py-3 bg-white border border-zinc-200 hover:border-zinc-300 rounded-2xl text-left flex items-center gap-3">
+                    <div class="text-2xl">📖</div>
+                    <div>
+                        <div class="font-semibold">Curriculum</div>
+                        <div class="text-xs text-zinc-500">GB structured progression</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- TECHNIQUES SECTION -->
+        <div id="section-techniques" class="mat-section">
+            <div class="bg-white border border-zinc-200 rounded-3xl p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-2xl font-semibold tracking-tight">Techniques Library</h2>
+                        <p class="text-sm text-zinc-500">212 techniques • Rich personal notes saved back to vault • GB1 curriculum tagged</p>
+                    </div>
+                    <div class="hidden md:flex items-center gap-2 text-xs">
+                        <div class="px-2 py-1 bg-zinc-100 rounded">Filter by category</div>
+                        <div class="px-2 py-1 bg-zinc-100 rounded">Min confidence</div>
+                        <div class="px-2 py-1 bg-red-100 text-red-700 rounded">GB1 only</div>
+                    </div>
+                </div>
+
+                <!-- Sample Techniques -->
+                <div class="grid md:grid-cols-2 gap-4">
+                    <!-- Technique 1 -->
+                    <div class="technique-card border border-zinc-200 rounded-2xl p-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="font-semibold">Closed Guard • Knee Cut Pass</div>
+                                <div class="text-xs text-zinc-500">Guard Pass • GB1 Week 3</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-amber-500">★★★★☆</div>
+                                <div class="text-[10px] text-zinc-400">4.2 / 5</div>
+                            </div>
+                        </div>
+                        <div class="mt-3 text-sm text-zinc-600">
+                            "My go-to when opponent is posturing heavy. Focus on the inside knee drive and underhook control."
+                        </div>
+                        <div class="mt-2 flex items-center gap-2 text-xs">
+                            <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">Has video</span>
+                            <span class="px-2 py-0.5 bg-zinc-100 rounded">Personal notes</span>
+                        </div>
+                    </div>
+
+                    <!-- Technique 2 -->
+                    <div class="technique-card border border-zinc-200 rounded-2xl p-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="font-semibold">Mount Escape • Elbow Escape (Uke)</div>
+                                <div class="text-xs text-zinc-500">Escape • GB1 Week 2</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-amber-500">★★★★★</div>
+                                <div class="text-[10px] text-zinc-400">5.0 / 5</div>
+                            </div>
+                        </div>
+                        <div class="mt-3 text-sm text-zinc-600">
+                            "Critical for smaller people vs bigger opponents. Timing on the hip escape is everything."
+                        </div>
+                        <div class="mt-2 flex items-center gap-2 text-xs">
+                            <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">Has video</span>
+                            <span class="px-2 py-0.5 bg-zinc-100 rounded">Strong notes</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 text-xs text-center text-zinc-500">
+                    Full library includes advanced filtering, GB curriculum tracking, and direct vault editing of personal cues.
+                </div>
+            </div>
+        </div>
+
+        <!-- ROUTINES SECTION -->
+        <div id="section-routines" class="mat-section hidden">
+            <div class="bg-white border border-zinc-200 rounded-3xl p-6">
+                <h2 class="text-2xl font-semibold tracking-tight mb-1">Routines Generator</h2>
+                <p class="text-sm text-zinc-500 mb-6">Intelligent training sessions generated from your actual technique library and current readiness.</p>
+
+                <div class="bg-zinc-50 border border-zinc-200 rounded-2xl p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="font-semibold">Today's Session</div>
+                            <div class="text-xs text-emerald-600">45 minutes • Guard Passing Focus • High Readiness</div>
+                        </div>
+                        <button onclick="simulateRoutineGeneration()" class="px-4 py-2 bg-black text-white text-sm rounded-2xl flex items-center gap-2 hover:bg-zinc-800">
+                            <i class="fa-solid fa-magic"></i>
+                            <span>Regenerate</span>
+                        </button>
+                    </div>
+
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <div><strong>10 min</strong> — Warm-up + specific guard retention drills</div>
+                        </div>
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <div><strong>20 min</strong> — Positional sparring (closed guard top/bottom)</div>
+                        </div>
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <div><strong>12 min</strong> — Specific technique chains (knee cut → back take)</div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div><strong>3 min</strong> — Cool down + note taking</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3 text-xs text-zinc-500">Pulls live from your vault techniques + current physiological state (HRV, readiness, recent notes).</div>
+            </div>
+        </div>
+
+        <!-- MIND MAPS SECTION -->
+        <div id="section-mindmaps" class="mat-section hidden">
+            <div class="bg-white border border-zinc-200 rounded-3xl p-6">
+                <h2 class="text-2xl font-semibold tracking-tight mb-1">Mind Maps</h2>
+                <p class="text-sm text-zinc-500 mb-6">Visual concept maps that connect techniques, principles, and cross-domain ideas.</p>
+
+                <div class="bg-zinc-50 border border-zinc-200 rounded-2xl p-6">
+                    <div class="text-center mb-4">
+                        <div class="font-semibold mb-1">Guard Passing Mind Map</div>
+                        <div class="text-xs text-zinc-500">Connected to: Fitness mobility • Equipment (grip strength) • Principles</div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 justify-center text-sm">
+                        <div class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full">Knee Cut</div>
+                        <div class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full">Torreando</div>
+                        <div class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full">Leg Drag</div>
+                        <div class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full">Hip Mobility</div>
+                        <div class="px-3 py-1 bg-violet-100 text-violet-700 rounded-full">Pressure Principles</div>
+                    </div>
+                </div>
+                
+                <div class="mt-3 text-xs text-center text-zinc-500">These maps are generated from your vault and help with long-term retention and creative problem solving on the mat.</div>
+            </div>
+        </div>
+
+        <!-- CURRICULUM SECTION -->
+        <div id="section-curriculum" class="mat-section hidden">
+            <div class="bg-white border border-zinc-200 rounded-3xl p-6">
+                <h2 class="text-2xl font-semibold tracking-tight mb-1">GB Curriculum</h2>
+                <p class="text-sm text-zinc-500 mb-6">Structured progression mapped directly to your personal technique library and notes.</p>
+
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <div class="font-medium">GB1 • Weeks 1–4</div>
+                            <div class="text-emerald-600">87% complete</div>
+                        </div>
+                        <div class="h-2 bg-zinc-100 rounded-full overflow-hidden">
+                            <div class="h-2 bg-emerald-500 w-[87%] rounded-full"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs grid grid-cols-2 gap-x-6 gap-y-1 text-zinc-600">
+                        <div>• Closed Guard fundamentals</div>
+                        <div>• Mount escapes (complete)</div>
+                        <div>• Basic guard passes (in progress)</div>
+                        <div>• Side control retention</div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 text-xs text-zinc-500">Every technique in the curriculum is linked to your actual notes and video resources. Progress is tracked automatically from your vault.</div>
+            </div>
+        </div>
+
+        <!-- Value Props -->
+        <div class="mt-12 grid md:grid-cols-3 gap-6 text-sm">
+            <div class="bg-white border border-zinc-200 rounded-2xl p-5">
+                <div class="font-semibold mb-2">Live from your Obsidian vault</div>
+                <div class="text-xs text-zinc-600">All content, notes, and progress live in one place. The Forge is just the beautiful, mobile-first surface.</div>
+            </div>
+            <div class="bg-white border border-zinc-200 rounded-2xl p-5">
+                <div class="font-semibold mb-2">Personal notes that actually matter</div>
+                <div class="text-xs text-zinc-600">Every technique can have your own cues, timing notes, and failure modes — saved directly back to the vault.</div>
+            </div>
+            <div class="bg-white border border-zinc-200 rounded-2xl p-5">
+                <div class="font-semibold mb-2">Cross-domain intelligence</div>
+                <div class="text-xs text-zinc-600">Techniques link to Fitness protocols, Equipment maintenance, and principles. The whole Forge works together.</div>
+            </div>
+        </div>
+
+        <div class="mt-10 text-center text-xs text-zinc-400">
+            This is a live, production system. All data is real and connected to Darren’s personal Obsidian vault.<br>
+            The Mat is the primary subdomain inside The Forge.
+        </div>
+    </div>
+
+    <script>
+        function showMatSection(section) {
+            // Hide all sections
+            document.querySelectorAll('.mat-section').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            // Show selected
+            document.getElementById('section-' + section).classList.remove('hidden');
+            
+            // Update tab styles
+            document.querySelectorAll('.mat-tab').forEach(tab => {
+                tab.classList.remove('active', 'border-zinc-800', 'bg-zinc-900', 'text-white');
+                tab.classList.add('border-zinc-200');
+            });
+            
+            // Find and activate the clicked tab
+            const tabs = document.querySelectorAll('.mat-tab');
+            tabs.forEach(tab => {
+                if (tab.textContent.toLowerCase().includes(section)) {
+                    tab.classList.add('active', 'border-zinc-800', 'bg-zinc-900', 'text-white');
+                    tab.classList.remove('border-zinc-200');
+                }
+            });
+        }
+        
+        function simulateRoutineGeneration() {
+            const container = event.currentTarget?.closest('.bg-zinc-50');
+            if (!container) return;
+            
+            container.innerHTML = `
+                <div class="text-center py-6">
+                    <i class="fa-solid fa-magic text-2xl text-emerald-600 mb-3"></i>
+                    <div class="font-semibold">New session generated</div>
+                    <div class="text-xs text-zinc-500 mt-1">Focus: Guard Retention + Guard Passing • 50 minutes</div>
+                </div>
+            `;
+        }
+        
+        // Initialize with Techniques visible
+        window.onload = function() {
+            document.getElementById('section-techniques').classList.remove('hidden');
+            
+            // Style first tab as active
+            const firstTab = document.querySelector('.mat-tab');
+            if (firstTab) {
+                firstTab.classList.add('active', 'border-zinc-800', 'bg-zinc-900', 'text-white');
+            }
+        }
+    </script>
+</body>
+</html>
