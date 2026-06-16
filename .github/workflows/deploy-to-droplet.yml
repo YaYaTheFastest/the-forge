@@ -1,0 +1,23 @@
+name: Deploy to Digital Ocean Droplet
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Droplet
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DO_DROPLET_IP }}
+          username: root
+          key: ${{ secrets.DO_SSH_KEY }}
+          script: |
+            cd /root/the-forge
+            git pull origin main
+            npm install --production
+            pm2 restart the-forge || pm2 start npm --name "the-forge" -- start
+            echo "Deployed successfully!"
