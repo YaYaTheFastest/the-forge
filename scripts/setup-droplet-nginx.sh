@@ -18,7 +18,7 @@ echo "Creating nginx config for $DOMAIN (with www redirect)..."
 cat > /etc/nginx/sites-available/the-forge << EOF
 server {
     listen 80;
-    server_name $DOMAIN $WWW_DOMAIN;
+    server_name $DOMAIN;
 
     location / {
         proxy_pass http://localhost:$APP_PORT;
