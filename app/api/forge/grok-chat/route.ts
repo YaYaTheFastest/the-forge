@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const { message, context } = await request.json();
     const userMsg = (message || '').toLowerCase();
 
-    const isTechnique = !!context?.isTechniquePage;
+    let isTechnique = !!context?.isTechniquePage;
     let slug = context?.currentSlug;
     let techniqueName = context?.currentName || slug;
 
