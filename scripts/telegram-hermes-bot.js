@@ -1,15 +1,30 @@
 const { Telegraf } = require('telegraf');
 const axios = require('axios');
+const fs = require('fs');
 
-const token = process.env.TELEGRAM_BOT_TOKEN;
+let token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) {
-  console.error('Please set TELEGRAM_BOT_TOKEN env var');
+  // Fallback: allow a protected token file (chmod 600) so you do not have to paste the secret on every start
+  try { token = fs.readFileSync('/root/.tg-bot-token', 'utf8').trim(); } catch (_) {}
+  if (!token) {
+    // Also try common alt locations
+    for (const p of ['/root/.telegram-token', process.env.HOME + '/.tg-bot-token']) {
+      try { token = fs.readFileSync(p, 'utf8').trim(); if (token) break; } catch (_) {}
+    }
+  }
+}
+if (!token) {
+  console.error('Please set TELEGRAM_BOT_TOKEN env var or create /root/.tg-bot-token (chmod 600) containing only the token.');
   process.exit(1);
 }
 
 const bot = new Telegraf(token);
 
-const SITE_URL = process.env.SITE_URL || 'https://rockinjracing.com';
+// Prefer localhost when running on the droplet itself (avoids nginx basic-auth hop + TLS issues)
+const defaultSite = (process.env.HOSTNAME && process.env.HOSTNAME.includes('theforge')) || process.env.THE_MAT_VAULT_PATH === '/opt/vault'
+  ? 'http://localhost:3000'
+  : 'http://rockinjracing.com';
+const SITE_URL = process.env.SITE_URL || defaultSite;
 const AUTH = process.env.SITE_BASIC_AUTH || 'user:pass';
 
 const authHeader = 'Basic ' + Buffer.from(AUTH).toString('base64');
@@ -22,6 +37,7 @@ console.log('Telegram Hermes bot started. Listening...');
 bot.on('text', async (ctx) => {
   const text = ctx.message.text;
   try {
+    const isLocal = SITE_URL.includes('localhost') || SITE_URL.includes('127.0.0.1');
     const res = await axios.post(`${SITE_URL}/api/forge/grok-chat`, {
       message: text,
       context: {
@@ -29,7 +45,7 @@ bot.on('text', async (ctx) => {
       }
     }, {
       headers: {
-        'Authorization': authHeader,
+        ...(isLocal ? {} : { 'Authorization': authHeader }),
         'Content-Type': 'application/json'
       }
     });
