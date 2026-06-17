@@ -5,7 +5,7 @@
 # Customize the open command based on your Hermes desktop app.
 
 TASKS_DIR="/Users/darrenjorgenson/Obsidian/Jorgenson Brain/00 Meta/Hermes Tasks"
-HERMES_APP="Hermes"  # Change to the actual app name or CLI command, e.g. "open -a Claude" or "hermes-cli"
+HERMES_APP="Hermes Desktop"  # Change to the actual app name or CLI command, e.g. "open -a Claude" or "hermes-cli"
 
 echo "Watching for new Hermes tasks in $TASKS_DIR ..."
 echo "Make sure your Hermes desktop app is running."

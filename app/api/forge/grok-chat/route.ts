@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs/promises';
+import path from 'path';
 import { getTechniqueBySlug, getAllTechniques, updatePersonalNotes, createHermesTechniquePolishTask, applyMediaSuggestions, applyPolishedTechniqueCard } from '@/lib/vault';
 
 // Context-aware Grok chat backend.
@@ -32,26 +34,77 @@ The updates I can do will write directly to the server's vault copy (live on the
       });
     }
 
+    // Bulk support even without technique context (for "Hermes create tasks for all GB1")
+    if (userMsg.includes('all') || userMsg.includes('every') || userMsg.includes('bulk') || userMsg.includes('all cards') || userMsg.includes('every card')) {
+      const allTech = await getAllTechniques();
+      const gb1Cards = allTech.filter((t: any) => 
+        (t.gb_curriculum && t.gb_curriculum.some((g: string) => g.includes('GB1'))) || 
+        (t.name && /GB1/i.test(t.name)) ||
+        (t.filePath && /GB1/i.test(t.filePath))
+      );
+      let processed = 0;
+      let createdTasks = 0;
+      const createTasksOnly = userMsg.includes('create task') || userMsg.includes('create tasks') || userMsg.includes('review');
+      for (const t of gb1Cards) {
+        if (createTasksOnly) {
+          await createHermesTechniquePolishTask(t.slug, {
+            recentChange: `Bulk review triggered via live chat`,
+            triggeredFrom: 'Live Floating Grok Chat (bulk)',
+            focusAreas: ['Full 2026 GB1 Standard'],
+          });
+          createdTasks++;
+        } else {
+          const polished = generateFullPolishedCard(t);
+          await applyPolishedTechniqueCard(t.slug, polished);
+          processed++;
+        }
+        // no limit for bulk - process all requested
+      }
+      if (createTasksOnly) {
+        return NextResponse.json({
+          success: true,
+          response: `✅ Created detailed Hermes polish tasks for ${createdTasks} GB1 cards in the live vault. Process with Hermes Desktop (after pull), then say "apply Hermes outputs" in chat.`
+        });
+      } else {
+        return NextResponse.json({
+          success: true,
+          response: `✅ Directly applied full golden standard to ${processed} GB1 cards. Refresh to see.`
+        });
+      }
+    }
+
+    // Support adding new techniques directly via chat - "add new technique GB1-XXX - Name: description"
+    if (userMsg.includes('add new technique') || userMsg.includes('create new technique') || userMsg.includes('new card for')) {
+      // Simple parse: the rest after the keyword is the prompt for name and content
+      const prompt = message.replace(/.*?(add new technique|create new technique|new card for)/i, '').trim();
+      const nameMatch = prompt.match(/^([^-]+)( - |: )?(.*)/);
+      let name = nameMatch ? nameMatch[1].trim() : 'New Technique ' + Date.now();
+      const desc = nameMatch && nameMatch[3] ? nameMatch[3].trim() : prompt;
+
+      // Generate using the generator with the provided info
+      const newTech = {
+        name,
+        position: 'standing',
+        category: 'self-defense',
+        gb_curriculum: ['GB1 Curriculum'],
+        content: desc || 'New technique added via chat.',
+        personalNotes: ''
+      };
+      const polished = generateFullPolishedCard(newTech);
+      const bjjDir = '/opt/vault/20 Knowledge Base/BJJ/Captures';
+      const safeName = name.replace(/[^a-z0-9\s-]/gi, ' ').trim();
+      const fileName = `${safeName}.md`;
+      const fullPath = path.join(bjjDir, fileName);
+      await fs.writeFile(fullPath, polished, 'utf8');
+      return NextResponse.json({
+        success: true,
+        response: `✅ Created new technique **${name}**. It has been written directly to the vault. Refresh the techniques list or page to see it magically appear. No Obsidian or manual sync needed.`
+      });
+    }
+
     const technique = await getTechniqueBySlug(slug);
     if (!technique) {
       return NextResponse.json({ success: false, response: 'Could not load the current technique from the vault.' });
-    }
-
-    // Bulk support for "Hermes review every card" or "polish all GB1" - zero copy/paste from you
-    if (userMsg.includes('all') || userMsg.includes('every') || userMsg.includes('bulk') || userMsg.includes('all cards') || userMsg.includes('every card')) {
-      const allTech = await getAllTechniques();
-      const gb1Cards = allTech.filter((t: any) => t.gb_curriculum && t.gb_curriculum.some((g: string) => g.includes('GB1')));
-      let processed = 0;
-      for (const t of gb1Cards) {
-        const polished = generateFullPolishedCard(t);
-        await applyPolishedTechniqueCard(t.slug, polished);
-        processed++;
-        if (processed > 10) break; // safety limit per call
-      }
-      return NextResponse.json({
-        success: true,
-        response: `✅ Hermes reviewed and directly applied full golden standard polish to ${processed} GB1 cards in the live vault. No Obsidian, no copy/paste, no sync needed from you. Hard refresh the techniques list and individual pages to see the highest quality content. Use the chat for any tweaks.`
-      });
     }
 
     // Direct update instructions (zero further interaction)
@@ -64,7 +117,7 @@ The updates I can do will write directly to the server's vault copy (live on the
 
       if (isGolden) {
         // Create the rich Hermes task (for deep work / audit trail) 
-        await createHermesTechniquePolishTask(slug, {
+        const taskResult = await createHermesTechniquePolishTask(slug, {
           recentChange: `Requested via live floating Grok chat on the deployed site: "${message}"`,
           triggeredFrom: 'Live Floating Grok Chat (droplet)',
           focusAreas: ['Full 2026 GB1 Standard', 'Personal cues quality and usability', 'Structure, clarity, media'],
@@ -90,8 +143,13 @@ The updates I can do will write directly to the server's vault copy (live on the
 
         resp = `✅ Created Hermes task (for record) and **directly applied full polished golden standard content** to the live vault for **${techniqueName}**.\n\n`;
         resp += `The entire card (structure + sections + specific media and photo refs) has been updated on the server.\n\n`;
+        if (taskResult && taskResult.taskContent) {
+          resp += `Since you don't have Hermes Desktop watcher set up yet, here's the full task content you can copy and send to Hermes:\n\n`;
+          resp += `\`\`\`\n${taskResult.taskContent}\n\`\`\`\n\n`;
+          resp += `After Hermes replies with the polished card, paste the output here and say "apply this Hermes polished card" — I'll write it directly to the vault.\n\n`;
+        }
         if (wrote || fullApply.success) {
-          resp += `Refresh the page (or pull-to-refresh) to see the polished card. No Obsidian or sync needed.`;
+          resp += `Refresh the page (or pull-to-refresh) to see the current version. No Obsidian or sync needed.`;
         }
       }
 
@@ -129,6 +187,41 @@ The updates I can do will write directly to the server's vault copy (live on the
       }
     }
 
+    // Auto-apply Hermes outputs from task files (Grok wires it: scans tasks for ## Polished Card Output and applies directly)
+    if (userMsg.includes('apply Hermes') || userMsg.includes('apply the Hermes') || userMsg.includes('apply polished outputs') || userMsg.includes('apply Hermes outputs')) {
+      const hermesDir = '/opt/vault/00 Meta/Hermes Tasks';
+      try {
+        const files = await fs.readdir(hermesDir);
+        let applied = 0;
+        for (const f of files) {
+          if (!f.endsWith('.md')) continue;
+          const fullPath = path.join(hermesDir, f);
+          const content = await fs.readFile(fullPath, 'utf8');
+          // Look for the polished section we instructed Hermes to append
+          const match = content.match(/## Polished Card Output\s*\n([\s\S]*?)(?=\n## |$)/);
+          if (match && match[1]) {
+            const polished = match[1].trim();
+            // Extract slug from the task content
+            const slugMatch = content.match(/\(slug: ([^)]+)\)/);
+            if (slugMatch) {
+              const s = slugMatch[1];
+              const res = await applyPolishedTechniqueCard(s, polished);
+              if (res.success) applied++;
+            }
+          }
+        }
+        return NextResponse.json({
+          success: true,
+          response: `✅ Applied ${applied} Hermes-polished cards directly from the task files to the live vault. Refresh the pages to see the highest quality content. No manual copy/paste of files needed.`
+        });
+      } catch (e: any) {
+        return NextResponse.json({
+          success: false,
+          response: 'Could not scan Hermes tasks: ' + (e?.message || e)
+        });
+      }
+    }
+
     if (userMsg.includes('apply') && (userMsg.includes('note') || userMsg.includes('cue'))) {
       const improved = generateQuickGoldenNotes(technique);
       const wrote = await updatePersonalNotes(slug, improved);
@@ -141,7 +234,15 @@ The updates I can do will write directly to the server's vault copy (live on the
       });
     }
 
-    // Default: answer using real vault context
+    // Default: answer using real vault context and permanent instructions
+    const instructionsPath = '/opt/vault/Hermes - BJJ Card Golden Standard Instructions.md';
+    let instructions = '';
+    try {
+      instructions = await fs.readFile(instructionsPath, 'utf8');
+    } catch (e) {
+      instructions = 'Follow the permanent GB1 golden standard for highest quality cards.';
+    }
+
     const contextText = `
 Current technique: ${technique.name}
 Category/Position: ${technique.category || ''} ${technique.position || ''}
@@ -152,6 +253,9 @@ ${technique.content?.substring(0, 1500) || '(no content)'}...
 
 Your personal notes:
 ${technique.personalNotes || '(none yet)'}
+
+Permanent Instructions:
+${instructions}
 `;
 
     return NextResponse.json({
@@ -203,7 +307,7 @@ function generateFullPolishedCard(technique: any): string {
   const notes = technique.personalNotes || '';
   const gb = technique.gb_curriculum || [];
 
-  // Follow permanent GB1 golden standard rule: absolute highest quality, full 6 sections, ready-to-apply full markdown + frontmatter. Generate technique-specific rich content. No copy/paste needed from user.
+  // Follow permanent GB1 golden standard rule (loaded from Hermes - BJJ Card Golden Standard Instructions.md): absolute highest quality, full 6 sections, ready-to-apply full markdown + frontmatter. Generate technique-specific rich content. Grok handles as much as possible.
   const frontmatter = `---
 name: ${name}
 position: ${position}
@@ -226,27 +330,46 @@ photos: []
 **Category:** ${category}  
 **ID:** ${technique.id || ''}
 
-## Concept
+## **Concept**
 
-A practical self-defense sequence against a high round kick (typically to the head). Block the kick, immediately enter with an inside hook for the takedown, then flow directly into a straight footlock on the ground. Emphasizes timing, base, and seamless transitions under real-world stress. Effective for de-escalation or when the opponent commits to the kick.
+${name} is a high-percentage self-defense sequence from standing. It combines a strong block against a high round kick with an explosive inside hook entry for the takedown, flowing seamlessly into a straight footlock finish. The technique prioritizes timing, base, and leverage over strength, making it effective under fatigue and against larger opponents.
 
-## Setup
+## **Setup**
 
-You are standing, opponent throws a high round kick (right or left) aimed at your head. 
-- Maintain good posture, hands up, weight balanced.
-- Opponent's lead leg or rear leg chambers for the kick.
-- Your goal: disrupt the kick early, close distance explosively, and control the leg for the finish.
-Include awareness of environment (walls, multiple attackers).
+- You are in a standing position, hands up, weight balanced on the balls of your feet.
+- Opponent throws a high round kick (rear leg typically) aimed at your head.
+- Key cues: Watch the chambering of the kick leg. Step offline at 45 degrees while blocking.
+- Goal: Disrupt the kick's power, close distance immediately, control the leg, and finish on the ground.
 
-## Execution
+## **Execution**
 
-1. **Block the kick**: As the kick rises, use your lead forearm or cross block (palm or forearm) to deflect the shin. Keep elbow tight to head. Step slightly offline (45 degrees) to avoid the power line. "Meet the kick with structure, not arms only."
+**1. Block the high round kick**
+- As the kick rises, raise your lead forearm or use a cross block with palm/forearm to meet the shin.
+- Keep elbow tight to your head, absorb with structure not just arms.
+- Simultaneously step 45 degrees offline to remove your head from the kick line.
+- Cue: "Meet the kick with your whole body, not just the arm."
 
-2. **Enter with inside hook**: Immediately after block, drive forward. Use your rear leg to hook inside the opponent's standing leg (behind the knee or calf). Posture low, head off centerline. Grab the kicked leg with your lead hand if needed for control. "Explode on the block recovery — hook and drive in one motion."
+**2. Enter with inside hook**
+- Immediately after contact, explode forward with your rear leg.
+- Hook your rear leg behind the opponent's standing leg (target the calf or knee).
+- Posture low, head off centerline, drive with your hips.
+- Secure the kicked leg with your lead hand if possible for control.
+- Cue: "Explode on the block – hook and drive as one motion."
 
-3. **Takedown**: Use the hook to sweep or trip while pushing the upper body. Keep the hooked leg elevated. Drive through with hips. Land in a dominant position (side control or half guard transition). Maintain control of the leg throughout.
+**3. Complete the takedown**
+- Use the hook to trip or sweep while pushing the upper body with your hands/shoulders.
+- Keep the hooked leg high and controlled.
+- Drive through with your hips and base.
+- Land in side control or transition to half guard while maintaining leg control.
+- Cue: "Hips high, shoulders low – use your whole body to finish the trip."
 
-4. **Flow to straight footlock**: As you hit the ground or immediately after, isolate the foot. Figure-4 your legs around the opponent's leg (one leg over the shin, other under). Grab the foot with both hands (thumb on top for pressure). Extend the hips while keeping the knee trapped. Apply pressure slowly then explosively if needed. "Control the ankle, not just the toes. Hips high for leverage."
+**4. Transition to straight footlock**
+- Isolate the foot as soon as you have ground control.
+- Wrap your legs in a figure-4 (one shin across the opponent's shin, the other leg threading through).
+- Grab the foot with both hands, thumbs on top for leverage.
+- Elevate your hips while keeping the knee trapped.
+- Apply steady then progressive pressure.
+- Cue: "Control the ankle, not the toes. Hips up for the finish."
 
 **Fatigue & Pressure Reality (2026 GB1 standard):**
 - This falls apart first when tired or vs heavier/posturing opponent. The first cue that disappears is the explosive entry after the block.
@@ -257,7 +380,7 @@ Include awareness of environment (walls, multiple attackers).
 - Wait for commitment then explode.
 - Keep base low and knees tight.
 
-## Common Mistakes
+## **Common Mistakes**
 
 - Rushing before full isolation or base.
 - Using arm strength instead of body weight and leverage.
@@ -265,21 +388,27 @@ Include awareness of environment (walls, multiple attackers).
 - Not controlling the leg during the takedown transition.
 - Grabbing toes instead of the whole foot for the lock.
 
-## When It Wins
+## **When It Wins**
 
-Best when opponent overcommits to the high kick (headhunting). The block creates the opening for the close. Transitions well to other ground attacks if the footlock is defended. Use in self-defense when de-escalation fails or against aggressive strikers.
+- Best when opponent overcommits to the high kick (headhunting).
+- The block creates the opening for the close.
+- Transitions well to other ground attacks if the footlock is defended.
+- Use in self-defense when de-escalation fails or against aggressive strikers.
 
-## Media & Visual References
+## **Media & Visual References**
 
-- Video: Gracie Barra High Kick Defense to Takedown (search "GB high round kick defense inside hook") - focus on timing of the block and entry.
-- Video: Inside Hook Takedown from standing (Roy Dean or similar) - timestamp for leg hook and drive.
-- Video: Straight Footlock from side control or after takedown (Gracie Barra Week 15) - emphasis on figure-4 and hip extension.
+**Videos:**
+- Gracie Barra High Kick Defense to Takedown (search "GB high round kick defense inside hook") - focus on timing of the block and entry.
+- Inside Hook Takedown from standing (Roy Dean or similar) - timestamp for leg hook and drive.
+- Straight Footlock from side control or after takedown (Gracie Barra Week 15) - emphasis on figure-4 and hip extension.
+
+**Photos / Visuals:**
 - [PHOTO: Forearm block against high round kick, elbow tight to temple, weight shifted offline]
 - [PHOTO: Inside leg hook position - rear leg hooking behind opponent's calf, posture low]
 - [PHOTO: Figure-4 leg entanglement for straight footlock, hips elevated, ankle control with thumbs on top]
 - [PHOTO: Final hip drive and pressure application in the footlock, shoulders low]
 
-## Personal Cues & Notes
+## **Personal Cues & Notes**
 
 ${notes || 'Add your personal observations here. Focus on what works under fatigue and real pressure.'}
 

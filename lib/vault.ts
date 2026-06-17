@@ -821,6 +821,14 @@ ${technique.content || '(content)'}
 
 Return the full updated technique card in clean markdown.
 
+After generating, append it to the END of THIS task file under a new section:
+
+## Polished Card Output
+
+[the full clean markdown here]
+
+This way Grok can automatically apply it from the live vault.
+
 *Generated automatically by live Grok chat on the deployed Forge ${today}*
 `;
 
