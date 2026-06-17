@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 import Link from 'next/link';
-import { HermesAsk } from '@/app/components/HermesAsk';
+import { GrokTechniqueActions } from '@/app/components/GrokTechniqueActions';
 import { MediaSection } from '@/app/components/media/MediaSection';
 import { Wikilink } from '@/app/components/Wikilink';
 import { cleanTechniqueDisplayName } from '@/lib/utils';
@@ -119,8 +119,8 @@ export default async function TechniquePage({ params }: Props) {
             </form>
           </section>
 
-          {/* Grok-powered actions + legacy Hermes research tools */}
-          <HermesAsk technique={technique} />
+          {/* Grok-powered actions (primary) + heavily reduced legacy paths */}
+          <GrokTechniqueActions technique={technique} />
         </div>
 
         {/* Sidebar */}

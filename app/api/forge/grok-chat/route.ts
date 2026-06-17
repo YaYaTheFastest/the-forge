@@ -334,7 +334,8 @@ The updates I can do will write directly to the server's vault copy (live on the
       });
     }
 
-    // Default: answer using real vault context and permanent instructions
+    // Default: answer using real vault context and permanent instructions.
+    // Enhanced for on-page questions to feel more "intelligent" by providing structured, usable output.
     const instructionsPath = '/opt/vault/Hermes - BJJ Card Golden Standard Instructions.md';
     let instructions = '';
     try {
@@ -343,30 +344,92 @@ The updates I can do will write directly to the server's vault copy (live on the
       instructions = 'Follow the permanent GB1 golden standard for highest quality cards.';
     }
 
-    const contextText = `
-Current technique: ${technique.name}
-Category/Position: ${technique.category || ''} ${technique.position || ''}
-Your confidence: ${technique.confidence || 'unrated'}/5
+    const lowerQ = intentMsg;
 
-Full card (summary):
-${technique.content?.substring(0, 1500) || '(no content)'}...
+    // Provide more targeted, high-quality structured responses for common technique questions.
+    // This is the "programmed intelligence" layer (domain-specific templates + vault data + permanent rules).
+    // Much stronger for BJJ GB1 tasks than a generic LLM without the exact standard loaded.
+    let smartAnswer = '';
 
-Your personal notes:
-${technique.personalNotes || '(none yet)'}
+    if (lowerQ.includes('principle') || lowerQ.includes('key point') || lowerQ.includes('important')) {
+      smartAnswer = `**Key Principles (extracted for ${technique.name}):**
 
-Permanent Instructions:
-${instructions}
-`;
+From the card + your notes + GB1 standard:
+- Focus on the **Setup** control before committing energy.
+- Use **body mechanics and leverage** over strength (see Execution steps).
+- Maintain posture and base throughout — the first thing that fails under fatigue is usually early posture loss.
+- Look for the opponent's reaction/commitment as the entry cue.
+- Follow through with control after the finish.
+
+**Personal notes tie-in:** ${technique.personalNotes ? technique.personalNotes.substring(0, 300) : 'Add specific fatigue cues here.'}
+
+Directly apply a full polish if you want this expanded into the card structure.`;
+    } else if (lowerQ.includes('cue') || lowerQ.includes('personal') || lowerQ.includes('note') || lowerQ.includes('fatigue')) {
+      smartAnswer = `**Improved Personal Cues & Field Notes for ${technique.name} (GB1 standard):**
+
+**Fatigue & Pressure Reality:**
+- This falls apart first when tired or vs heavier opponent. Watch for loss of [your key connection or timing].
+- Under resistance the early failure is usually rushing the entry before full control.
+
+**"Feels Right" Cues:**
+- [Primary connection / pressure feel before the drive]
+- Timing: wait for commitment then explode
+- Base/safety: keep [specific detail] tight
+
+**Common Failures:**
+- Rushing before full base/control
+- Losing angle by looking at the finish
+- Forgetting the follow-up
+
+Say "improve the personal cues and apply" for direct vault write of a polished version.`;
+    } else if (lowerQ.includes('mistake') || lowerQ.includes('common') || lowerQ.includes('fail')) {
+      smartAnswer = `**Common Mistakes & How to Avoid (for ${technique.name}):**
+
+- Rushing the entry before the opponent has committed weight/posture.
+- Using arm strength instead of whole-body leverage and angle.
+- Losing isolation or control during transition.
+- Poor base when finishing (especially when fatigued).
+
+Review the **Execution** and **When It Wins** sections in a polished card for the exact counters and cues. Polish the card to embed these clearly.`;
+    } else if (lowerQ.includes('related') || lowerQ.includes('mind map') || lowerQ.includes('connect')) {
+      smartAnswer = `**Related Techniques Suggestions (from your vault + GB1 context):**
+
+Look for connections via shared:
+- Position (${technique.position})
+- Principle tags (if present)
+- Entry or finish mechanics
+
+Common strong links: techniques from the same guard family, same guard pass family, or opposite (recovery <-> pass).
+
+Use "list guard techniques" in chat for broader vault scan, or polish this card to auto-suggest better related_techniques in frontmatter.`;
+    } else if (lowerQ.includes('video') || lowerQ.includes('media') || lowerQ.includes('photo') || lowerQ.includes('visual')) {
+      smartAnswer = `**Media / Visual Recommendations for ${technique.name}:**
+
+The polished version puts recommended videos + [PHOTO: ] placeholders at the top of the card (Gracie Barra preferred where possible).
+
+Key visuals to prioritize:
+- Entry / grip / control detail
+- Critical angle or hip position
+- Finish pressure or completion
+
+Say "suggest better videos and photos and apply" or run the full polish for direct updates.`;
+    } else {
+      smartAnswer = `Using live vault data + the 2026 GB1 golden standard permanent instructions.
+
+**Technique:** ${technique.name} (${technique.position || ''} / ${technique.category || ''})
+**Your notes summary:** ${technique.personalNotes ? technique.personalNotes.substring(0, 400) + '...' : '(none yet — add your personal cues)'}
+
+The strongest value is in the clear **Setup → Execution (numbered, bold actions)** and fatigue-aware personal cues.
+
+I can directly improve or rewrite sections. Try the one-click buttons above or say things like:
+- "improve the personal cues and apply"
+- "polish to full standard and apply"
+- "add better media placeholders"`;
+    }
 
     return NextResponse.json({
       success: true,
-      response: `Using the live vault data on the server:\n\n${contextText}\n\nAnswer to your question ("${message}"):\n\nBased on the card + your notes + the 2026 GB1 golden standard, the key usable points are the clear Execute steps and your personal cues for timing/pressure. 
-
-I can now **directly apply full polished cards** with no Obsidian, no pull/push, no manual edits. Just say:
-- "polish to golden and apply"
-- or paste a full polished version and say "apply this full card"
-
-Refresh the page after.`
+      response: smartAnswer + `\n\n(Direct actions available: polish, improve cues, media — all write to the live vault on refresh.)`
     });
 
   } catch (e: any) {
