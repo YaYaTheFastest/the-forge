@@ -124,7 +124,7 @@ export default function DailyWinsPage() {
     setTodaysPlan(updated);
 
     // Real Forge state logging flow (Option A)
-    if (newCompleted && item.category === 'Equipment' && item.serviceType === 'maintenance') {
+    if (newCompleted && item.category === 'Equipment' && item.type === 'maintenance') {
       setTimeout(async () => {
         const hoursStr = prompt(`New current hours on the equipment?`, "");
         if (!hoursStr) return;
@@ -288,7 +288,7 @@ export default function DailyWinsPage() {
             {fitnessSuggestions.map((item, idx) => (
               <div
                 key={idx}
-                onClick={() => addToPlan('Fitness', item.name, item.serviceType)}
+                onClick={() => addToPlan('Fitness', item.name, item.type)}
                 className="group flex items-center justify-between p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl cursor-pointer transition-colors"
               >
                 <div>
@@ -373,7 +373,7 @@ export default function DailyWinsPage() {
             {choresSuggestions.map((item, idx) => (
               <div
                 key={idx}
-                onClick={() => addToPlan('Chores', item.name, item.serviceType)}
+                onClick={() => addToPlan('Chores', item.name, item.type)}
                 className="group flex items-center justify-between p-2.5 bg-sky-50 hover:bg-sky-100 border border-sky-100 rounded-2xl cursor-pointer transition-colors"
               >
                 <div className="font-semibold text-sm">{item.name}</div>
