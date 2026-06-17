@@ -77,8 +77,8 @@ export default async function EquipmentProfilePage({ params }: Props) {
   const contentForPhotos = equipment.content || '';
   const photoMatches = contentForPhotos.match(/\[PHOTO:[^\]]+\]|\!\[[^\]]*\]\([^)]+\)/g) || [];
   const photos = photoMatches.map((match, index) => ({
-    description: match.replace(/\[PHOTO:\s*|\]|\!\[|\]\(.*\)/g, '').trim() || `Photo ${index + 1}`,
-    url: null, // In future: map to actual image URLs if stored in public/ or vault attachments
+    url: '', // TODO: real image URLs
+    caption: match.replace(/\[PHOTO:\s*|\]|\!\[|\]\(.*\)/g, '').trim() || `Photo ${index + 1}`,
   }));
 
   const videos: any[] = [];
