@@ -2,12 +2,14 @@ import { getTechniqueBySlug, updatePersonalNotes, applyMediaSuggestions } from '
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Star } from 'lucide-react';
+
 import Link from 'next/link';
 import { HermesAsk } from '@/app/components/HermesAsk';
 import { MediaSection } from '@/app/components/media/MediaSection';
 import { Wikilink } from '@/app/components/Wikilink';
 import { cleanTechniqueDisplayName } from '@/lib/utils';
+import { StarRating } from '@/app/components/StarRating';
+import { revalidatePath } from 'next/cache';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -44,6 +46,7 @@ export default async function TechniquePage({ params }: Props) {
     const newValue = parseInt(formData.get('confidence') as string, 10);
     if (!isNaN(newValue) && newValue >= 0 && newValue <= 5) {
       await applyMediaSuggestions(technique!.slug, { confidence: newValue });
+      revalidatePath(`/techniques/${technique!.slug}`);
     }
   }
 
@@ -79,22 +82,17 @@ export default async function TechniquePage({ params }: Props) {
               <span className="text-2xl text-muted-foreground">/5</span>
             </div>
             <div className="mt-1 flex justify-end">
-              <StarRating value={technique.confidence} />
+              <StarRating 
+                value={technique.confidence} 
+                editable 
+                onChange={(newValue) => {
+                  const fd = new FormData();
+                  fd.append('confidence', newValue.toString());
+                  saveConfidence(fd);
+                }} 
+                size="lg" 
+              />
             </div>
-            <form action={saveConfidence} className="mt-1 flex gap-0.5 justify-end">
-              {[1,2,3,4,5].map((n) => (
-                <button
-                  key={n}
-                  type="submit"
-                  name="confidence"
-                  value={n}
-                  className="text-xl leading-none text-yellow-400 hover:scale-125 active:scale-150 transition-transform"
-                  title={`Set comfort to ${n}`}
-                >
-                  ★
-                </button>
-              ))}
-            </form>
           </div>
         )}
       </div>
@@ -240,13 +238,3 @@ function getCategoryHexForDetail(cat?: string): string {
   return map[key] || '#64748b';
 }
 
-function StarRating({ value = 0 }: { value?: number }) {
-  const filled = Math.max(0, Math.min(5, Math.round(value)));
-  return (
-    <div className="flex items-center gap-0.5">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star key={i} className={`w-4 h-4 ${i < filled ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
-      ))}
-    </div>
-  );
-}

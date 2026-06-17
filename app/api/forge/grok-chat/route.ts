@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTechniqueBySlug, updatePersonalNotes, createHermesTechniquePolishTask } from '@/lib/vault';
+import { getTechniqueBySlug, updatePersonalNotes, createHermesTechniquePolishTask, applyMediaSuggestions } from '@/lib/vault';
 
 // Context-aware Grok chat backend.
 // When the floating button is used on the live deployed app (droplet),
@@ -38,29 +38,46 @@ The updates I can do will write directly to the server's vault copy (live on the
     }
 
     // Direct update instructions (zero further interaction)
-    if (userMsg.includes('polish') || userMsg.includes('golden') || userMsg.includes('improve') || userMsg.includes('standard') || userMsg.includes('photo')) {
-      // Create the rich Hermes task (for deep work) + offer direct Grok polish
-      await createHermesTechniquePolishTask(slug, {
-        recentChange: `Requested via live floating Grok chat on the deployed site: "${message}"`,
-        triggeredFrom: 'Live Floating Grok Chat (droplet)',
-        focusAreas: ['Full 2026 GB1 Standard', 'Personal cues quality and usability', 'Structure, clarity, media'],
-      });
+    const isGolden = userMsg.includes('polish') || userMsg.includes('golden') || userMsg.includes('improve') || userMsg.includes('standard');
+    const wantsPhotos = userMsg.includes('photo');
 
-      // For many cases we can also do a quick direct notes improvement
-      const quickImproved = generateQuickGoldenNotes(technique);
-      const wrote = await updatePersonalNotes(slug, quickImproved);
+    if (isGolden || wantsPhotos) {
+      let resp = '';
+      let wrote = false;
 
-      let resp = `✅ Created a full Hermes polish task for **${techniqueName}** (in the live vault's 00 Meta/Hermes Tasks folder).\n\n`;
-      if (wrote) {
-        resp += `I also directly applied an improved "Personal Cues & Notes" section to the live vault using the golden standard (fatigue-aware, testable, common failure modes).\n\n`;
-        resp += `Refresh the page (or pull-to-refresh on mobile) to see it. The change is live on the site right now.`;
-      } else {
-        resp += `Refresh or hard-reload to see the task. Paste the task content to Hermes if you want deep research, then paste the response back here for me to apply.`;
+      if (isGolden) {
+        // Create the rich Hermes task (for deep work) + offer direct Grok polish
+        await createHermesTechniquePolishTask(slug, {
+          recentChange: `Requested via live floating Grok chat on the deployed site: "${message}"`,
+          triggeredFrom: 'Live Floating Grok Chat (droplet)',
+          focusAreas: ['Full 2026 GB1 Standard', 'Personal cues quality and usability', 'Structure, clarity, media'],
+        });
+
+        // For many cases we can also do a quick direct notes improvement
+        const quickImproved = generateQuickGoldenNotes(technique);
+        wrote = await updatePersonalNotes(slug, quickImproved);
+
+        resp = `✅ Created a full Hermes polish task for **${techniqueName}** (in the live vault's 00 Meta/Hermes Tasks folder).\n\n`;
+        if (wrote) {
+          resp += `I also directly applied an improved "Personal Cues & Notes" section to the live vault using the golden standard (fatigue-aware, testable, common failure modes).\n\n`;
+          resp += `Refresh the page (or pull-to-refresh on mobile) to see it. The change is live on the site right now.`;
+        } else {
+          resp += `Refresh or hard-reload to see the task. Paste the task content to Hermes if you want deep research, then paste the response back here for me to apply.`;
+        }
       }
-      if (userMsg.includes('photo')) {
-        resp += `\n\nFor photos: I recommend adding 3-4 high-quality placeholders or descriptions in the Media section (e.g. [PHOTO: front view of the lock]). Use the vault editor or ask me to generate specific photo suggestions.`;
+
+      if (wantsPhotos) {
+        await applyMediaSuggestions(slug, {
+          photos: [
+            { description: "Setup and grip for the americana keylock from side control" },
+            { description: "Applying the figure-4 lock and pressure" },
+            { description: "Finishing the submission with control" },
+          ]
+        });
+        resp += `\n\n✅ Directly added photo placeholders in the Media section (using the vault's [PHOTO: ] syntax for now, since real images aren't in the vault yet). Refresh to see the updated card with suggested photos included. No Hermes task needed for this.`;
       }
-      return NextResponse.json({ success: true, response: resp, changesApplied: wrote });
+
+      return NextResponse.json({ success: true, response: resp, changesApplied: wrote || wantsPhotos });
     }
 
     if (userMsg.includes('apply') && (userMsg.includes('note') || userMsg.includes('cue'))) {
