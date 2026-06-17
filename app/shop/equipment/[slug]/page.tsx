@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
 import { MediaSection } from '@/app/components/media/MediaSection';
 import { HermesPromptClient } from '../HermesPromptClient';
-import { HermesTriggerClient } from './HermesTriggerClient';
+import { HermesTriggerClient } from '../HermesTriggerClient';
 
 interface Props {
   params: Promise<{ slug: string }>;
