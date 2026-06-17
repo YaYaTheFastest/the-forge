@@ -687,6 +687,92 @@ After you respond, the human will paste the improved sections back into the sour
   }
 }
 
+export async function createHermesTechniquePolishTask(
+  slug: string,
+  context: {
+    recentChange?: string;
+    focusAreas?: string[];
+    triggeredFrom?: string;
+  } = {}
+): Promise<{ success: boolean; taskFilePath?: string; taskContent?: string; message: string }> {
+  const technique = await getTechniqueBySlug(slug);
+  if (!technique) {
+    return { success: false, message: 'Technique not found in vault.' };
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const safeName = technique.name.replace(/[/\\?%*:|"<>]/g, '-').slice(0, 80);
+  const taskFilename = `${today} - Hermes Polish to GB1 Golden - ${safeName}.md`;
+
+  const taskDir = HERMES_TASKS_DIR();
+
+  try {
+    await fs.mkdir(taskDir, { recursive: true });
+
+    const focus = context.focusAreas && context.focusAreas.length > 0
+      ? context.focusAreas.join(', ')
+      : 'Full 2026 GB1 Standard, Personal cues quality, Structure, clarity, media';
+
+    const changeNote = context.recentChange
+      ? `\n**Recent Change Detected**: ${context.recentChange}\n`
+      : '';
+
+    const triggeredNote = context.triggeredFrom
+      ? `This polish was triggered from: **${context.triggeredFrom}** in The Forge.\n`
+      : '';
+
+    const taskContent = `# Hermes Polish Task: Update ${technique.name} to 2026 GB1 Golden Standard
+
+**Date**: ${today}
+**Technique**: ${technique.name} (slug: ${slug})
+**Priority**: High
+**Focus**: ${focus}
+
+${changeNote}${triggeredNote}
+
+## Context (for Hermes)
+
+Polish this technique card to the permanent 2026 GB1 golden standard.
+
+Use the full current card content below as baseline.
+
+Improve:
+- Clear, field-usable Execute steps
+- Fatigue-aware, testable Personal Cues & Notes
+- Structure, clarity, any media suggestions
+- Common failures and when it wins
+
+## Current Card Content
+
+---
+${technique.content || '(content)'}
+---
+
+## Output Instructions
+
+Return the full updated technique card in clean markdown.
+
+*Generated automatically by live Grok chat on the deployed Forge ${today}*
+`;
+
+    const taskPath = path.join(taskDir, taskFilename);
+    await fs.writeFile(taskPath, taskContent, 'utf8');
+
+    return {
+      success: true,
+      taskFilePath: taskPath,
+      taskContent,
+      message: `Hermes polish task created: 00 Meta/Hermes Tasks/${taskFilename}`
+    };
+  } catch (error: any) {
+    console.error('Failed to create Hermes Technique polish task:', error);
+    return {
+      success: false,
+      message: `Failed to write Hermes task file: ${error?.message || error}`
+    };
+  }
+}
+
 /* ============================================================
    Mind Maps Persistence (Obsidian Vault)
    Stored in <Vault Root>/Mind Maps/*.md
