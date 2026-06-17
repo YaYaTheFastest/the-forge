@@ -71,6 +71,7 @@ export default function FloatingGrokButton() {
       // Call our new context-aware Grok chat API
       const res = await fetch('/api/forge/grok-chat', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,

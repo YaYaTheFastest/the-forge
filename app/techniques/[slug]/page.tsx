@@ -1,4 +1,4 @@
-import { getTechniqueBySlug, updatePersonalNotes } from '@/lib/vault';
+import { getTechniqueBySlug, updatePersonalNotes, applyMediaSuggestions } from '@/lib/vault';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -39,6 +39,14 @@ export default async function TechniquePage({ params }: Props) {
     await updatePersonalNotes(technique!.slug, newNotes);
   }
 
+  async function saveConfidence(formData: FormData) {
+    'use server';
+    const newValue = parseInt(formData.get('confidence') as string, 10);
+    if (!isNaN(newValue) && newValue >= 0 && newValue <= 5) {
+      await applyMediaSuggestions(technique!.slug, { confidence: newValue });
+    }
+  }
+
   const categoryStyle = getCategoryStyleForDetail(technique.category);
   const accentColor = getCategoryHexForDetail(technique.category);
 
@@ -73,6 +81,20 @@ export default async function TechniquePage({ params }: Props) {
             <div className="mt-1 flex justify-end">
               <StarRating value={technique.confidence} />
             </div>
+            <form action={saveConfidence} className="mt-1 flex gap-0.5 justify-end">
+              {[1,2,3,4,5].map((n) => (
+                <button
+                  key={n}
+                  type="submit"
+                  name="confidence"
+                  value={n}
+                  className="text-xl leading-none text-yellow-400 hover:scale-125 active:scale-150 transition-transform"
+                  title={`Set comfort to ${n}`}
+                >
+                  ★
+                </button>
+              ))}
+            </form>
           </div>
         )}
       </div>
