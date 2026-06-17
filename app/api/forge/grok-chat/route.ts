@@ -15,10 +15,30 @@ export async function POST(request: NextRequest) {
     const userMsg = (message || '').toLowerCase();
 
     const isTechnique = !!context?.isTechniquePage;
-    const slug = context?.currentSlug;
-    const techniqueName = context?.currentName || slug;
+    let slug = context?.currentSlug;
+    let techniqueName = context?.currentName || slug;
 
-    if (!isTechnique || !slug) {
+    // For Telegram / general messages, try to resolve a card from the text for context
+    if (!slug && message) {
+      try {
+        const allTech = await getAllTechniques();
+        const lowerMsg = message.toLowerCase();
+        const found = allTech.find(t => {
+          const n = (t.name || '').toLowerCase();
+          const s = (t.slug || '').toLowerCase();
+          return lowerMsg.includes(n) || lowerMsg.includes(s) || (n && lowerMsg.includes(n.replace(/[^a-z0-9]/g, '')));
+        });
+        if (found) {
+          slug = found.slug;
+          techniqueName = found.name;
+          isTechnique = true;  // treat as having context
+        }
+      } catch (e) {}
+    }
+
+    // Only show the "go to a page" message if no context and no obvious action keywords
+    const hasAction = userMsg.includes('polish') || userMsg.includes('apply') || userMsg.includes('update') || userMsg.includes('add') || userMsg.includes('create') || userMsg.includes('list') || userMsg.includes('all') || userMsg.includes('guard') || userMsg.includes('sweep');
+    if (!slug && !hasAction) {
       return NextResponse.json({
         success: true,
         response: `I'm running on the remote server with access to the live vault.
@@ -73,6 +93,34 @@ The updates I can do will write directly to the server's vault copy (live on the
       }
     }
 
+    // General search/list for queries from Telegram or non-page like "list guard techniques"
+    if (!slug && (userMsg.includes('list') || userMsg.includes('show') || userMsg.includes('guard') || userMsg.includes('what') || userMsg.includes('techniques'))) {
+      try {
+        const allTech = await getAllTechniques();
+        const q = userMsg.replace(/list|show|guard|techniques?|what|are|the|some|guard pass|guard passes/g, ' ').trim();
+        let matches = [];
+        if (q.length > 1) {
+          matches = allTech.filter(t => 
+            (t.name || '').toLowerCase().includes(q) ||
+            (t.position || '').toLowerCase().includes(q) ||
+            (t.category || '').toLowerCase().includes(q) ||
+            (t.principle_tags || []).some(p => (p||'').toLowerCase().includes(q)) ||
+            (t.gb_curriculum || []).some(g => (g||'').toLowerCase().includes(q))
+          );
+        } else {
+          matches = allTech.filter(t => (t.name || '').toLowerCase().includes('guard') || (t.position || '').toLowerCase().includes('guard'));
+        }
+        matches = matches.slice(0, 8);
+        if (matches.length > 0) {
+          const list = matches.map(t => `- **${t.name}** (${t.position || t.category || ''})`).join('\n');
+          return NextResponse.json({
+            success: true,
+            response: `From your vault:\n\n${list}\n\nTo polish one say e.g. "polish ${matches[0].name} to full standard and apply"`
+          });
+        }
+      } catch(e){}
+    }
+
     // Support adding new techniques directly via chat - "add new technique GB1-XXX - Name: description"
     if (userMsg.includes('add new technique') || userMsg.includes('create new technique') || userMsg.includes('new card for')) {
       // Simple parse: the rest after the keyword is the prompt for name and content
@@ -99,6 +147,13 @@ The updates I can do will write directly to the server's vault copy (live on the
       return NextResponse.json({
         success: true,
         response: `✅ Created new technique **${name}**. It has been written directly to the vault. Refresh the techniques list or page to see it magically appear. No Obsidian or manual sync needed.`
+      });
+    }
+
+    if (!slug) {
+      return NextResponse.json({
+        success: true,
+        response: `I'm connected to the live vault.\n\nTry naming a card like "GB1-W15-B1" or "list guard techniques" or "polish all GB1 to full standard".`
       });
     }
 
