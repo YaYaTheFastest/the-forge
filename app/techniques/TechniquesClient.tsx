@@ -89,9 +89,9 @@ export default function TechniquesClient({
   const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
     if (initialCategory) {
       const norm = normalizeForMatch(initialCategory);
-      const exact = allCategories.find(c => normalizeForMatch(c) === norm);
+      const exact = categoryButtons.find(c => normalizeForMatch(c) === norm);
       if (exact) return [exact];
-      const match = allCategories.find(c => {
+      const match = categoryButtons.find(c => {
         const cn = normalizeForMatch(c);
         return cn.includes(norm) || norm.includes(cn);
       });
@@ -117,7 +117,7 @@ export default function TechniquesClient({
       const resolved: string[] = [];
       for (const p of rawCats) {
         const norm = normalizeForMatch(p);
-        const m = allCategories.find(c => normalizeForMatch(c) === norm || normalizeForMatch(c).includes(norm) || norm.includes(normalizeForMatch(c)));
+        const m = categoryButtons.find(c => normalizeForMatch(c) === norm || normalizeForMatch(c).includes(norm) || norm.includes(normalizeForMatch(c)));
         resolved.push(m || p);
       }
       if (JSON.stringify(resolved.sort()) !== JSON.stringify([...selectedCategories].sort())) {

@@ -36,8 +36,9 @@ export const getAllTechniques = cache(async function getAllTechniques(): Promise
           const personalNotes = personalNotesMatch ? personalNotesMatch[1].trim() : '';
 
           const fileName = path.basename(filePath);
+          const slug = fileName.replace('.md', '').normalize('NFC').replace(/[—–−]/g, '-');
           techniques.push({
-            slug: fileName.replace('.md', '').normalize('NFC'),
+            slug,
             name: data.name || fileName.replace('.md', ''),
             position: data.position,
             category: data.category,
@@ -89,36 +90,39 @@ export async function getTechniqueBySlug(slug: string): Promise<TechniqueCard | 
   const techniques = await getAllTechniques();
 
   // Incoming slug from Next.js dynamic route may arrive percent-encoded (e.g. %20, %E2%80%94).
-  // Decode first, then normalize to NFC for reliable matching against filenames on macOS.
+  // Decode first, then normalize to NFC and dashes for reliable matching.
   let normalizedSlug: string;
   try {
     normalizedSlug = decodeURIComponent(slug).normalize('NFC');
   } catch {
     normalizedSlug = slug.normalize('NFC');
   }
+  normalizedSlug = normalizedSlug.replace(/[—–−]/g, '-').replace(/\s+/g, ' ').trim();
 
-  // Exact match (preferred)
-  const exact = techniques.find(t => t.slug === normalizedSlug);
+  const nSlugLower = normalizedSlug.toLowerCase();
+
+  // Exact match (preferred, with dash norm)
+  const exact = techniques.find(t => t.slug === normalizedSlug || t.slug.replace(/[—–−]/g, '-') === normalizedSlug);
   if (exact) return exact;
 
-  // Fallback 1: match against the 'name' field (for cases where related_techniques stores clean/short names)
-  const byName = techniques.find(t => t.name === normalizedSlug);
+  // Fallback 1: match against the 'name' field
+  const byName = techniques.find(t => t.name === normalizedSlug || (t.name && t.name.replace(/[—–−]/g, '-') === normalizedSlug));
   if (byName) return byName;
 
-  // Fallback 2: cleaned display name match (strips GB1- prefix and provider suffixes)
+  // Fallback 2: cleaned display name match
   const cleaned = cleanTechniqueDisplayName(normalizedSlug);
   const byClean = techniques.find(t => cleanTechniqueDisplayName(t.slug) === cleaned || cleanTechniqueDisplayName(t.name) === cleaned);
   if (byClean) return byClean;
 
-  // Fallback 3: loose contains match on slug or name (for partial / legacy short names during transition)
+  // Fallback 3: loose contains match (with norm)
   const loose = techniques.find(t =>
-    t.slug.toLowerCase().includes(normalizedSlug.toLowerCase()) ||
-    (t.name && t.name.toLowerCase().includes(normalizedSlug.toLowerCase())) ||
-    normalizedSlug.toLowerCase().includes(t.slug.toLowerCase())
+    t.slug.toLowerCase().includes(nSlugLower) ||
+    (t.name && t.name.toLowerCase().includes(nSlugLower)) ||
+    nSlugLower.includes(t.slug.toLowerCase())
   );
   if (loose) return loose;
 
-  // Fallback 4: match by internal id (e.g. t116) — useful for non-GB1 / "Other" cards
+  // Fallback 4: match by internal id
   const byId = techniques.find(t => (t as any).id === normalizedSlug || String((t as any).id) === normalizedSlug);
   if (byId) return byId;
 
