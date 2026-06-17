@@ -49,7 +49,7 @@ export const getAllTechniques = cache(async function getAllTechniques(): Promise
             gb_curriculum: data.gb_curriculum,
             principle_tags: data.principle_tags,
             lineage_tags: data.lineage_tags,
-            confidence: data.confidence,
+            confidence: typeof data.confidence === 'number' ? Math.max(0, Math.min(5, Math.round(data.confidence))) : data.confidence,
             last_drilled: data.last_drilled,
             last_reviewed: data.last_reviewed,
             related_techniques: data.related_techniques,
@@ -168,6 +168,48 @@ export async function updatePersonalNotes(slug: string, newNotes: string): Promi
  * - Replaces or inserts the ## Media & Visual References section with clean markdown
  * - Never touches the ### Personal Cues & Notes section or other user prose
  */
+/**
+ * Applies a full polished version of a technique card directly.
+ * Accepts either a full markdown string (with optional frontmatter)
+ * or just the body. Preserves/merges frontmatter.
+ */
+export async function applyPolishedTechniqueCard(
+  slug: string,
+  polishedMarkdown: string
+): Promise<{ success: boolean; message: string; filePath?: string }> {
+  const technique = await getTechniqueBySlug(slug);
+  if (!technique) {
+    return { success: false, message: 'Technique not found in vault.' };
+  }
+
+  try {
+    const originalRaw = await fs.readFile(technique.filePath, 'utf8');
+    const { data: existingFrontmatter } = matter(originalRaw);
+
+    let finalFrontmatter = { ...existingFrontmatter };
+    let finalBody = polishedMarkdown.trim();
+
+    // If the polished input starts with frontmatter, parse and merge
+    if (polishedMarkdown.trim().startsWith('---')) {
+      const { data: newFront, content: newBody } = matter(polishedMarkdown);
+      finalFrontmatter = { ...existingFrontmatter, ...newFront };
+      finalBody = newBody.trim();
+    }
+
+    const updatedFile = matter.stringify(finalBody, finalFrontmatter);
+    await fs.writeFile(technique.filePath, updatedFile, 'utf8');
+
+    return {
+      success: true,
+      message: 'Full polished card content applied directly to the vault.',
+      filePath: technique.filePath,
+    };
+  } catch (error: any) {
+    console.error('Error applying polished technique card:', error);
+    return { success: false, message: error?.message || 'Failed to write polished content' };
+  }
+}
+
 export async function applyMediaSuggestions(
   slug: string,
   updates: {

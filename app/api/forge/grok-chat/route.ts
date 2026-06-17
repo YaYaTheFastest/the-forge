@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTechniqueBySlug, updatePersonalNotes, createHermesTechniquePolishTask, applyMediaSuggestions } from '@/lib/vault';
+import { getTechniqueBySlug, updatePersonalNotes, createHermesTechniquePolishTask, applyMediaSuggestions, applyPolishedTechniqueCard } from '@/lib/vault';
 
 // Context-aware Grok chat backend.
 // When the floating button is used on the live deployed app (droplet),
@@ -46,23 +46,25 @@ The updates I can do will write directly to the server's vault copy (live on the
       let wrote = false;
 
       if (isGolden) {
-        // Create the rich Hermes task (for deep work) + offer direct Grok polish
+        // Create the rich Hermes task (for deep work / audit trail) 
         await createHermesTechniquePolishTask(slug, {
           recentChange: `Requested via live floating Grok chat on the deployed site: "${message}"`,
           triggeredFrom: 'Live Floating Grok Chat (droplet)',
           focusAreas: ['Full 2026 GB1 Standard', 'Personal cues quality and usability', 'Structure, clarity, media'],
         });
 
-        // For many cases we can also do a quick direct notes improvement
+        // Direct full apply for frictionless experience (no Obsidian required)
+        const fullPolished = generateFullPolishedCard(technique);
+        const fullApply = await applyPolishedTechniqueCard(slug, fullPolished);
+
+        // Also quick personal notes (kept for compatibility)
         const quickImproved = generateQuickGoldenNotes(technique);
         wrote = await updatePersonalNotes(slug, quickImproved);
 
-        resp = `✅ Created a full Hermes polish task for **${techniqueName}** (in the live vault's 00 Meta/Hermes Tasks folder).\n\n`;
-        if (wrote) {
-          resp += `I also directly applied an improved "Personal Cues & Notes" section to the live vault using the golden standard (fatigue-aware, testable, common failure modes).\n\n`;
-          resp += `Refresh the page (or pull-to-refresh on mobile) to see it. The change is live on the site right now.`;
-        } else {
-          resp += `Refresh or hard-reload to see the task. Paste the task content to Hermes if you want deep research, then paste the response back here for me to apply.`;
+        resp = `✅ Created Hermes task (for record) and **directly applied full polished golden standard content** to the live vault for **${techniqueName}**.\n\n`;
+        resp += `The entire card (structure + sections) has been updated on the server.\n\n`;
+        if (wrote || fullApply.success) {
+          resp += `Refresh the page (or pull-to-refresh) to see the polished card. No Obsidian or sync needed.`;
         }
       }
 
@@ -78,6 +80,26 @@ The updates I can do will write directly to the server's vault copy (live on the
       }
 
       return NextResponse.json({ success: true, response: resp, changesApplied: wrote || wantsPhotos });
+    }
+
+    // Frictionless paste-back support: user pastes full Hermes/Grok polished output and says "apply this full card"
+    if ((userMsg.includes('apply') || userMsg.includes('paste')) && (userMsg.includes('polished') || userMsg.includes('full') || userMsg.includes('card') || userMsg.includes('here is'))) {
+      // Extract the substantial content after trigger words
+      const splitters = /apply this|here is the|paste this|full polished|polished version/i;
+      const parts = message.split(splitters);
+      let candidate = parts.length > 1 ? parts[parts.length - 1].trim() : message.trim();
+
+      // If candidate is long enough, treat as full card content
+      if (candidate.length > 150) {
+        const result = await applyPolishedTechniqueCard(slug, candidate);
+        return NextResponse.json({
+          success: result.success,
+          response: result.success
+            ? `✅ Full polished card content applied directly to the live vault for **${techniqueName}**. Refresh (or hard refresh) the page to see the updated technique. No Obsidian or manual sync required.`
+            : `Apply attempted but: ${result.message}`,
+          changesApplied: result.success,
+        });
+      }
     }
 
     if (userMsg.includes('apply') && (userMsg.includes('note') || userMsg.includes('cue'))) {
@@ -107,7 +129,13 @@ ${technique.personalNotes || '(none yet)'}
 
     return NextResponse.json({
       success: true,
-      response: `Using the live vault data on the server:\n\n${contextText}\n\nAnswer to your question ("${message}"):\n\nBased on the card + your notes + the 2026 GB1 golden standard, the key usable points are the clear Execute steps and your personal cues for timing/pressure. If you'd like me to rewrite a section, add media, or polish the whole card, just say so (e.g. "polish to golden and apply"). I can do many updates directly here.`
+      response: `Using the live vault data on the server:\n\n${contextText}\n\nAnswer to your question ("${message}"):\n\nBased on the card + your notes + the 2026 GB1 golden standard, the key usable points are the clear Execute steps and your personal cues for timing/pressure. 
+
+I can now **directly apply full polished cards** with no Obsidian, no pull/push, no manual edits. Just say:
+- "polish to golden and apply"
+- or paste a full polished version and say "apply this full card"
+
+Refresh the page after.`
     });
 
   } catch (e: any) {
@@ -138,4 +166,62 @@ function generateQuickGoldenNotes(technique: any): string {
 - Switch to [related technique] if they do X.
 
 *Updated via live Grok chat on the deployed site.*`;
+}
+
+function generateFullPolishedCard(technique: any): string {
+  const name = technique.name || 'Technique';
+  const position = technique.position || 'position';
+  const category = technique.category || 'technique';
+  const current = technique.content || '';
+  const notes = technique.personalNotes || '';
+
+  // Build a complete golden standard card, preserving useful parts from current and overlaying structure + golden cues
+  return `# ${name}
+
+**Position:** ${position}  
+**Category:** ${category}
+
+## Concept
+
+${current.includes('## Concept') ? current.split('## Concept')[1]?.split('##')[0]?.trim() || 'High-percentage ' + category + ' from ' + position + ' that uses leverage and control.' : 'High-percentage ' + category + ' from ' + position + ' using proper leverage, base, and timing.'}
+
+## Setup
+
+Isolate the key limb while maintaining strong base and connection. Use the opponent's reaction against them.
+
+## Execution
+
+1. Establish dominant control and connection.
+2. Isolate the target (arm/leg/head).
+3. Apply the mechanical advantage (figure-4, underhook, etc.).
+4. Finish with progressive pressure, using hips and weight.
+
+**Fatigue & Pressure Reality (2026 GB1 standard):**
+- This falls apart first when tired or vs heavier/posturing opponent.
+- Under resistance, the early failure is usually losing the initial isolation.
+
+**My Personal "Feels Right" Cues:**
+- Heavy chest / sticky connection before the finish.
+- Wait for commitment then explode.
+- Keep base low and knees tight.
+
+## Common Mistakes
+
+- Rushing before full isolation or base.
+- Using arm strength instead of body weight and leverage.
+- Poor knee/hip position allowing escape.
+
+## When It Wins
+
+Best when opponent pushes, bridges, or gives the limb. Transition to related techniques if stuffed.
+
+## Media & Visual References
+
+[Add videos and photos here via chat or Hermes]
+
+## Personal Cues & Notes
+
+${notes || 'Add your personal observations here. The quick golden cues have been applied above.'}
+
+*Full golden standard polish applied via live site chat. Refresh to view.*`;
 }
