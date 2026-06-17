@@ -97,7 +97,7 @@ export default async function EquipmentProfilePage({ params }: Props) {
         <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
           {photos.slice(0, 4).map((photo, idx) => (
             <div key={idx} className="aspect-video bg-muted rounded-2xl flex items-center justify-center text-xs text-muted-foreground border">
-              📷 {photo.description || `Photo ${idx + 1}`}
+              📷 {photo.caption || `Photo ${idx + 1}`}
               <div className="text-[10px] mt-1 text-center">Add real image of this machine in the vault card</div>
             </div>
           ))}
