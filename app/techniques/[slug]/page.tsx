@@ -119,7 +119,7 @@ export default async function TechniquePage({ params }: Props) {
             </form>
           </section>
 
-          {/* Hermes Interaction */}
+          {/* Grok-powered actions + legacy Hermes research tools */}
           <HermesAsk technique={technique} />
         </div>
 

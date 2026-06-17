@@ -196,19 +196,60 @@ export function HermesAsk({ technique }: HermesAskProps) {
     }
   };
 
+  // Direct Grok action (recommended - uses the same wired live-vault logic as the floating chat and Telegram)
+  const polishWithGrok = async () => {
+    setLoading(true);
+    setResponse('');
+    try {
+      const res = await fetch('/api/forge/grok-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: 'polish this to the 2026 GB1 golden standard and apply directly',
+          context: {
+            currentSlug: technique.slug,
+            currentName: technique.name,
+            isTechniquePage: true,
+          },
+        }),
+      });
+      const data = await res.json();
+      setResponse(data.response || 'Done. Check the card (refresh if needed).');
+      // If it applied, the response already tells the user to refresh
+    } catch (e) {
+      setResponse('Direct Grok polish failed. Use the floating 💬 chat button instead (it has full context on this page).');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="border-t pt-8">
       <div className="mb-4">
         <h2 className="text-lg font-semibold tracking-tight flex items-center gap-2">
-          Ask Hermes
-          <span className="text-xs font-normal px-2 py-0.5 rounded bg-violet-100 text-violet-700">AI</span>
+          Grok / Forge (direct to live vault)
+          <span className="text-xs font-normal px-2 py-0.5 rounded bg-blue-100 text-blue-700">Recommended</span>
         </h2>
         <p className="text-sm text-muted-foreground">
-          Get intelligent analysis, principle extraction, or suggestions for this technique.
+          One-click polish, media, or analysis. Powered by the same Grok chat that works from Telegram and the floating 💬 button. Writes straight to /opt/vault.
         </p>
       </div>
 
-      {/* Suggested Prompts */}
+      {/* Primary direct Grok action - replaces most "Send to Hermes for Polish" needs */}
+      <div className="mb-4">
+        <button
+          onClick={polishWithGrok}
+          disabled={loading}
+          className="w-full px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2"
+        >
+          {loading ? 'Polishing with Grok & applying...' : '✨ Polish to full 2026 GB1 golden standard + apply directly'}
+        </button>
+        <div className="text-[10px] text-center text-muted-foreground mt-1">
+          Same as saying it in the floating chat or Telegram. No Hermes Desktop or paste required.
+        </div>
+      </div>
+
+      {/* Suggested Prompts (still route through the older Hermes path for now; use floating Grok chat for best results) */}
       <div className="flex flex-wrap gap-2 mb-4">
         {suggestedPrompts.map((p, index) => (
           <button
@@ -225,8 +266,11 @@ export function HermesAsk({ technique }: HermesAskProps) {
           disabled={loading}
           className="text-left text-xs px-3 py-1.5 rounded-full border bg-violet-50 hover:bg-violet-100 text-violet-700 disabled:opacity-50 transition"
         >
-          Suggest Media
+          Suggest Media (via Hermes)
         </button>
+      </div>
+      <div className="text-[10px] text-muted-foreground -mt-2 mb-3">
+        For most polish + apply work, use the blue Grok button above or the floating 💬 (full context on this page).
       </div>
 
       {/* Custom Prompt */}
@@ -253,12 +297,12 @@ export function HermesAsk({ technique }: HermesAskProps) {
           {!usedHermes && response.includes('Copy the prompt below') ? (
             // Guided manual flow (Telegram / local Hermes CLI) - clean and low-noise
             <div className="border rounded-2xl p-5 bg-card">
-              <div className="font-semibold mb-2 text-violet-700">Send to Hermes (via Telegram or CLI)</div>
+              <div className="font-semibold mb-2 text-violet-700">Legacy: Send to external Hermes (Telegram or Desktop)</div>
               
               <div className="text-sm text-muted-foreground mb-4 space-y-1">
                 <div>1. Click the button below to copy a clean prompt</div>
-                <div>2. Paste it into Hermes in Telegram (or run locally)</div>
-                <div>3. Copy Hermes’ reply and paste it in the box below</div>
+                <div>2. Paste it into Hermes (or use the Grok Telegram bot for direct actions)</div>
+                <div>3. Copy the reply and paste it in the box below</div>
                 <div>4. Click “Process Response” — we’ll turn it into reviewable suggestions</div>
               </div>
 
@@ -502,17 +546,21 @@ export function HermesAsk({ technique }: HermesAskProps) {
         </div>
       )}
 
-      {/* Advanced structured review tool (new - lower friction for complex updates) */}
+      {/* Advanced structured review tool */}
       <div className="mt-8 border-t pt-6">
         <details>
           <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground mb-2">
-            Advanced: Structured Hermes Response Reviewer (best for big updates)
+            Advanced: Paste external Hermes response for structured review (optional legacy path)
           </summary>
           <HermesSuggestionReview 
             techniqueSlug={technique.slug} 
             techniqueName={technique.name} 
           />
         </details>
+      </div>
+
+      <div className="mt-4 text-[10px] text-muted-foreground">
+        Tip: The floating 💬 Grok button (bottom right) is always available with full page context and does direct vault writes for polish, notes, and more.
       </div>
     </div>
   );
