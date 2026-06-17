@@ -17,15 +17,15 @@ const authHeader = 'Basic ' + Buffer.from(AUTH).toString('base64');
 console.log('Telegram Hermes bot started. Listening...');
 
 // Prepend specific instructions for the BJJ domain factory
-const systemPrompt = "You are Grok, the wired domain factory for The Forge BJJ system. Follow the permanent 2026 GB1 golden standard instructions for highest quality: bold section headings, bullet points, recipe-like numbered instructions with bold action steps, clear formatting, and embedded visuals using [PHOTO: description] and video suggestions. Read the current vault content for context when a card is mentioned. For polish/update commands, generate and apply full polished content directly to the vault using the available tools. For adding new techniques, create the card directly. Support natural language for comments, questions, tweaks. No Obsidian needed - direct to live vault. Current user message: ";
-
+// Note: We send the raw user text only. The grok-chat route handles vault context, 
+// intent detection (list/guard/polish/etc), search, and direct applies. No LLM prefix needed.
 bot.on('text', async (ctx) => {
   const text = ctx.message.text;
   try {
     const res = await axios.post(`${SITE_URL}/api/forge/grok-chat`, {
-      message: systemPrompt + text,
+      message: text,
       context: {
-        isTechniquePage: text.toLowerCase().includes('card') || text.toLowerCase().includes('technique') || text.toLowerCase().includes('gb1'),
+        isTechniquePage: /card|technique|gb1/i.test(text),
       }
     }, {
       headers: {

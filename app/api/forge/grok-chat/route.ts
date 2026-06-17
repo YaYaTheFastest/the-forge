@@ -18,11 +18,15 @@ export async function POST(request: NextRequest) {
     let slug = context?.currentSlug;
     let techniqueName = context?.currentName || slug;
 
+    // Clean user text (Telegram previously prepended a long persona; web sends raw)
+    const rawForIntent = (message || '').replace(/.*current user message:\s*/i, '').trim();
+    const intentMsg = rawForIntent.toLowerCase() || userMsg;
+
     // For Telegram / general messages, try to resolve a card from the text for context
-    if (!slug && message) {
+    if (!slug && rawForIntent) {
       try {
         const allTech = await getAllTechniques();
-        const lowerMsg = message.toLowerCase();
+        const lowerMsg = intentMsg;
         const found = allTech.find(t => {
           const n = (t.name || '').toLowerCase();
           const s = (t.slug || '').toLowerCase();
@@ -36,8 +40,8 @@ export async function POST(request: NextRequest) {
       } catch (e) {}
     }
 
-    // Only show the "go to a page" message if no context and no obvious action keywords
-    const hasAction = userMsg.includes('polish') || userMsg.includes('apply') || userMsg.includes('update') || userMsg.includes('add') || userMsg.includes('create') || userMsg.includes('list') || userMsg.includes('all') || userMsg.includes('guard') || userMsg.includes('sweep');
+    // Only show the "go to a page" message if no context and no obvious action/ query keywords
+    const hasAction = intentMsg.includes('polish') || intentMsg.includes('apply') || intentMsg.includes('update') || intentMsg.includes('add') || intentMsg.includes('create') || intentMsg.includes('list') || intentMsg.includes('all') || intentMsg.includes('guard') || intentMsg.includes('sweep') || intentMsg.includes('what') || intentMsg.includes('show') || intentMsg.includes('my ');
     if (!slug && !hasAction) {
       return NextResponse.json({
         success: true,
@@ -50,12 +54,14 @@ Navigate to a specific technique page and ask things like:
 - "Polish this card to the 2026 GB1 golden standard and apply"
 - "Suggest better videos and apply them"
 
+Or from anywhere (Telegram or chat): "list guard techniques", "what guard passes do i have", "polish all GB1 to full standard".
+
 The updates I can do will write directly to the server's vault copy (live on the site).`
       });
     }
 
     // Bulk support even without technique context (for "Hermes create tasks for all GB1")
-    if (userMsg.includes('all') || userMsg.includes('every') || userMsg.includes('bulk') || userMsg.includes('all cards') || userMsg.includes('every card')) {
+    if (intentMsg.includes('all') || intentMsg.includes('every') || intentMsg.includes('bulk') || intentMsg.includes('all cards') || intentMsg.includes('every card')) {
       const allTech = await getAllTechniques();
       const gb1Cards = allTech.filter((t: any) => 
         (t.gb_curriculum && t.gb_curriculum.some((g: string) => g.includes('GB1'))) || 
@@ -64,7 +70,7 @@ The updates I can do will write directly to the server's vault copy (live on the
       );
       let processed = 0;
       let createdTasks = 0;
-      const createTasksOnly = userMsg.includes('create task') || userMsg.includes('create tasks') || userMsg.includes('review');
+      const createTasksOnly = intentMsg.includes('create task') || intentMsg.includes('create tasks') || intentMsg.includes('review');
       for (const t of gb1Cards) {
         if (createTasksOnly) {
           await createHermesTechniquePolishTask(t.slug, {
@@ -93,36 +99,73 @@ The updates I can do will write directly to the server's vault copy (live on the
       }
     }
 
-    // General search/list for queries from Telegram or non-page like "list guard techniques"
-    if (!slug && (userMsg.includes('list') || userMsg.includes('show') || userMsg.includes('guard') || userMsg.includes('what') || userMsg.includes('techniques'))) {
+    // General search/list for queries from Telegram or non-page like "what guard passes do i have" or "list guard techniques"
+    // This gives Telegram (and general chat) live vault context without being on a technique page.
+    const isGuardQ = intentMsg.includes('guard');
+    const isPassQ = intentMsg.includes('pass');
+    const isListOrWhatQ = intentMsg.includes('list') || intentMsg.includes('show') || intentMsg.includes('what') || intentMsg.includes('do i have') || intentMsg.includes('techniques') || intentMsg.includes('my ');
+    if (!slug && (isGuardQ || isPassQ || isListOrWhatQ)) {
       try {
         const allTech = await getAllTechniques();
-        const q = userMsg.replace(/list|show|guard|techniques?|what|are|the|some|guard pass|guard passes/g, ' ').trim();
-        let matches = [];
-        if (q.length > 1) {
-          matches = allTech.filter(t => 
-            (t.name || '').toLowerCase().includes(q) ||
-            (t.position || '').toLowerCase().includes(q) ||
-            (t.category || '').toLowerCase().includes(q) ||
-            (t.principle_tags || []).some(p => (p||'').toLowerCase().includes(q)) ||
-            (t.gb_curriculum || []).some(g => (g||'').toLowerCase().includes(q))
-          );
+        let matches: any[] = allTech;
+
+        if (isGuardQ) {
+          matches = allTech.filter((t: any) => {
+            const hay = [
+              t.name || '', t.position || '', t.category || '', t.filePath || '',
+              ...(t.gb_curriculum || []), ...(t.principle_tags || [])
+            ].join(' ').toLowerCase();
+            return hay.includes('guard');
+          });
+          if (isPassQ) {
+            matches = matches.filter((t: any) => {
+              const hay = ((t.name || '') + ' ' + (t.position || '') + ' ' + (t.category || '')).toLowerCase();
+              return hay.includes('pass') || hay.includes('passing');
+            });
+          }
+        } else if (isPassQ) {
+          matches = allTech.filter((t: any) => {
+            const hay = ((t.name || '') + ' ' + (t.position || '')).toLowerCase();
+            return hay.includes('pass') || hay.includes('passing');
+          });
         } else {
-          matches = allTech.filter(t => (t.name || '').toLowerCase().includes('guard') || (t.position || '').toLowerCase().includes('guard'));
+          // Generic keyword search using tokens from the cleaned query (stop words removed)
+          const qClean = intentMsg
+            .replace(/list|show|techniques?|what|are|the|some|do i have|have\??|my |i |guard techniques|guard passes/g, ' ')
+            .trim();
+          const tokens = qClean.split(/\s+/).filter((w: string) => w.length > 2);
+          if (tokens.length > 0) {
+            matches = allTech.filter((t: any) => {
+              const hay = [
+                t.name || '', t.position || '', t.category || '',
+                ...(t.gb_curriculum || []), ...(t.principle_tags || [])
+              ].join(' ').toLowerCase();
+              return tokens.some((tok: string) => hay.includes(tok));
+            });
+          }
         }
-        matches = matches.slice(0, 8);
+
+        matches = matches.slice(0, 12);
         if (matches.length > 0) {
-          const list = matches.map(t => `- **${t.name}** (${t.position || t.category || ''})`).join('\n');
+          const list = matches.map((t: any) => {
+            const gb = (t.gb_curriculum && t.gb_curriculum.length && JSON.stringify(t.gb_curriculum).toLowerCase().includes('gb1')) ? ' [GB1]' : '';
+            return `- **${t.name}**${gb} (${t.position || t.category || 'position'})`;
+          }).join('\n');
           return NextResponse.json({
             success: true,
-            response: `From your vault:\n\n${list}\n\nTo polish one say e.g. "polish ${matches[0].name} to full standard and apply"`
+            response: `From your live vault (${matches.length} shown of ${allTech.length} total):\n\n${list}\n\nTo polish one: "polish ${matches[0].name} to full standard and apply"\nOr: "polish all GB1 to full standard"`
+          });
+        } else {
+          return NextResponse.json({
+            success: true,
+            response: `Searched the live vault — no direct matches for the query terms.\n\nYou have many guard / guard-pass / recovery cards (closed-guard, open-guard, half-guard, guard-top etc).\nTry "list guard techniques" or name a specific card like a GB1 one.`
           });
         }
-      } catch(e){}
+      } catch (e) {}
     }
 
     // Support adding new techniques directly via chat - "add new technique GB1-XXX - Name: description"
-    if (userMsg.includes('add new technique') || userMsg.includes('create new technique') || userMsg.includes('new card for')) {
+    if (intentMsg.includes('add new technique') || intentMsg.includes('create new technique') || intentMsg.includes('new card for')) {
       // Simple parse: the rest after the keyword is the prompt for name and content
       const prompt = message.replace(/.*?(add new technique|create new technique|new card for)/i, '').trim();
       const nameMatch = prompt.match(/^([^-]+)( - |: )?(.*)/);
@@ -151,9 +194,11 @@ The updates I can do will write directly to the server's vault copy (live on the
     }
 
     if (!slug) {
+      // Last resort for completely unrecognized general queries. For anything that smells like
+      // a BJJ/vault question we should have caught above in search or bulk.
       return NextResponse.json({
         success: true,
-        response: `I'm connected to the live vault.\n\nTry naming a card like "GB1-W15-B1" or "list guard techniques" or "polish all GB1 to full standard".`
+        response: `I'm connected to the live vault.\n\nTry: "list guard techniques", "what guard passes do i have", "polish GB1-W15-B1 to full standard and apply", or name a specific card.`
       });
     }
 
@@ -163,8 +208,8 @@ The updates I can do will write directly to the server's vault copy (live on the
     }
 
     // Direct update instructions (zero further interaction)
-    const isGolden = userMsg.includes('polish') || userMsg.includes('golden') || userMsg.includes('improve') || userMsg.includes('standard');
-    const wantsPhotos = userMsg.includes('photo');
+    const isGolden = intentMsg.includes('polish') || intentMsg.includes('golden') || intentMsg.includes('improve') || intentMsg.includes('standard');
+    const wantsPhotos = intentMsg.includes('photo');
 
     if (isGolden || wantsPhotos) {
       let resp = '';
@@ -223,7 +268,7 @@ The updates I can do will write directly to the server's vault copy (live on the
     }
 
     // Frictionless paste-back support: user pastes full Hermes/Grok polished output and says "apply this full card"
-    if ((userMsg.includes('apply') || userMsg.includes('paste')) && (userMsg.includes('polished') || userMsg.includes('full') || userMsg.includes('card') || userMsg.includes('here is'))) {
+    if ((intentMsg.includes('apply') || intentMsg.includes('paste')) && (intentMsg.includes('polished') || intentMsg.includes('full') || intentMsg.includes('card') || intentMsg.includes('here is'))) {
       // Extract the substantial content after trigger words
       const splitters = /apply this|here is the|paste this|full polished|polished version/i;
       const parts = message.split(splitters);
@@ -243,7 +288,7 @@ The updates I can do will write directly to the server's vault copy (live on the
     }
 
     // Auto-apply Hermes outputs from task files (Grok wires it: scans tasks for ## Polished Card Output and applies directly)
-    if (userMsg.includes('apply Hermes') || userMsg.includes('apply the Hermes') || userMsg.includes('apply polished outputs') || userMsg.includes('apply Hermes outputs')) {
+    if (intentMsg.includes('apply Hermes') || intentMsg.includes('apply the Hermes') || intentMsg.includes('apply polished outputs') || intentMsg.includes('apply Hermes outputs')) {
       const hermesDir = '/opt/vault/00 Meta/Hermes Tasks';
       try {
         const files = await fs.readdir(hermesDir);
@@ -277,7 +322,7 @@ The updates I can do will write directly to the server's vault copy (live on the
       }
     }
 
-    if (userMsg.includes('apply') && (userMsg.includes('note') || userMsg.includes('cue'))) {
+    if (intentMsg.includes('apply') && (intentMsg.includes('note') || intentMsg.includes('cue'))) {
       const improved = generateQuickGoldenNotes(technique);
       const wrote = await updatePersonalNotes(slug, improved);
       return NextResponse.json({
