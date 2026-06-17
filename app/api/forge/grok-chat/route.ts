@@ -1,13 +1,90 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import { getTechniqueBySlug, getAllTechniques, updatePersonalNotes, createHermesTechniquePolishTask, applyMediaSuggestions, applyPolishedTechniqueCard } from '@/lib/vault';
 
-// Context-aware Grok chat backend.
-// When the floating button is used on the live deployed app (droplet),
-// this has direct access to the server's vault copy (/opt/vault once synced).
-// It can answer questions about your data AND execute many updates directly
-// (no Mac, no extra steps).
+const execAsync = promisify(exec);
+
+/**
+ * Execute Hermes deep processing on the user's Mac via SSH/Tailscale.
+ * Uses `hermes -z` which returns clean markdown only.
+ * The prompt must instruct "Return ONLY the clean markdown".
+ */
+async function callHermesDeep(prompt: string): Promise<{ success: boolean; output: string; error?: string }> {
+  const sshHost = process.env.HERMES_MAC_SSH || process.env.THE_MAT_HERMES_MAC_SSH || 'darren@darren-mac'; // Set in droplet env, e.g. darren@tailscale-mac-name
+  if (!sshHost) {
+    return { success: false, output: '', error: 'No HERMES_MAC_SSH configured' };
+  }
+
+  try {
+    // Use single quotes and escape internal single quotes
+    const escaped = prompt.replace(/'/g, "'\\''");
+    const cmd = `ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -o ServerAliveInterval=10 ${sshHost} 'hermes -z '"'"'${escaped}'"'"' '`;
+
+    const { stdout, stderr } = await execAsync(cmd, {
+      timeout: 180000, // 3 minutes for deep processing
+      maxBuffer: 20 * 1024 * 1024, // allow large markdown output
+    });
+
+    if (stderr) {
+      console.warn('[Hermes SSH] stderr:', stderr.substring(0, 500));
+    }
+
+    const output = (stdout || '').trim();
+    if (output.length < 50) {
+      return { success: false, output: '', error: 'Hermes returned very short output' };
+    }
+
+    return { success: true, output };
+  } catch (err: any) {
+    const msg = err?.message || String(err);
+    console.error('[Hermes SSH] error:', msg);
+    return { success: false, output: '', error: msg };
+  }
+}
+
+async function loadPermanentInstructions(): Promise<string> {
+  const possiblePaths = [
+    '/opt/vault/Hermes - BJJ Card Golden Standard Instructions.md',
+    '/opt/vault/BJJ-Hermes-Permanent-Best-Standard.md',
+    '/opt/vault/00 Meta/Systems/BJJ - Permanent Best Quality Standing Instructions for Hermes & Grok.md',
+  ];
+
+  let content = '';
+  for (const p of possiblePaths) {
+    try {
+      const c = await fs.readFile(p, 'utf8');
+      if (c && c.length > 10) content += `\n\n${c}`;
+    } catch {}
+  }
+
+  if (!content) {
+    content = `**Permanent Rule**: Every single time you generate or improve a BJJ technique card:
+- Produce the absolute highest quality, richest, most complete version possible.
+- Always use the full 6-section structure.
+- Include high-quality media suggestions, principle tags, lineage, personal cues, videos, confidence (4.5+), cross-references, practical drilling notes.
+- Output ready-to-apply full clean markdown only. No drafts.`;
+  }
+
+  return `You are following these permanent standing orders for all BJJ work (non-negotiable):\n${content}\n\nReturn ONLY the clean, complete markdown card content. No extra text, no explanations, no code blocks around it.`;
+}
+
+// Context-aware Grok chat backend (seamless with Hermes).
+// - Direct vault reads/writes on droplet.
+// - Fast templated actions for simple/standard requests.
+// - For deep work ("golden standard", "improve", "full quality"): automatically calls Hermes via SSH/Tailscale using `hermes -z` (returns clean markdown only).
+// - Applies result directly. Zero manual steps for the user.
+//
+// Setup on droplet (one time):
+//   export HERMES_MAC_SSH="darren@your-tailscale-mac-hostname"
+//   (or THE_MAT_HERMES_MAC_SSH)
+//   Add droplet's SSH public key to Mac ~/.ssh/authorized_keys for passwordless.
+//   Test manually: ssh $HERMES_MAC_SSH 'hermes -z "test prompt"'
+//   Then pm2 restart the-forge --update-env
+
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,6 +136,28 @@ Or from anywhere (Telegram or chat): "list guard techniques", "what guard passes
 The updates I can do will write directly to the server's vault copy (live on the site).`
       });
     }
+
+    // Proactively scan for pending Hermes outputs on every interaction (for seamlessness)
+    // This lets Grok notice completed Hermes work and offer/apply it automatically.
+    let pendingHermesNotice = '';
+    try {
+      const hermesDir = '/opt/vault/00 Meta/Hermes Tasks';
+      const files = await fs.readdir(hermesDir);
+      const pending: string[] = [];
+      for (const f of files) {
+        if (!f.endsWith('.md')) continue;
+        const fullPath = path.join(hermesDir, f);
+        const content = await fs.readFile(fullPath, 'utf8');
+        const hasOutput = /## Polished Card Output\s*\n([\s\S]*?)(?=\n## |$)/.test(content);
+        const slugMatch = content.match(/\(slug: ([^)]+)\)/);
+        if (hasOutput && slugMatch) {
+          pending.push(slugMatch[1]);
+        }
+      }
+      if (pending.length > 0) {
+        pendingHermesNotice = `\n\n📋 I see completed Hermes output ready for: ${pending.slice(0,3).join(', ')}${pending.length > 3 ? '...' : ''}. Say "apply Hermes outputs" to write them directly to the vault.`;
+      }
+    } catch {}
 
     // Bulk support even without technique context (for "Hermes create tasks for all GB1")
     if (intentMsg.includes('all') || intentMsg.includes('every') || intentMsg.includes('bulk') || intentMsg.includes('all cards') || intentMsg.includes('every card')) {
@@ -216,22 +315,49 @@ The updates I can do will write directly to the server's vault copy (live on the
       let wrote = false;
 
       if (isGolden) {
-        // Create the rich Hermes task (for deep work / audit trail) 
-        const taskResult = await createHermesTechniquePolishTask(slug, {
-          recentChange: `Requested via live floating Grok chat on the deployed site: "${message}"`,
-          triggeredFrom: 'Live Floating Grok Chat (droplet)',
-          focusAreas: ['Full 2026 GB1 Standard', 'Personal cues quality and usability', 'Structure, clarity, media'],
-        });
+        let usedDeepHermes = false;
+        let appliedContent = '';
 
-        // Direct full apply for frictionless experience (no Obsidian required)
-        const fullPolished = generateFullPolishedCard(technique);
-        const fullApply = await applyPolishedTechniqueCard(slug, fullPolished);
+        // Prefer real Hermes call for highest quality when we have a technique
+        if (technique) {
+          const permanent = await loadPermanentInstructions();
+          const richPrompt = `${permanent}
 
-        // Also quick personal notes (kept for compatibility)
+Current full card content:
+---
+${technique.content}
+---
+
+User request: ${message}
+
+Technique context:
+- Name: ${technique.name}
+- Position: ${technique.position || 'unknown'}
+- Category: ${technique.category || 'unknown'}
+- Personal notes: ${technique.personalNotes || '(none)'}
+
+Produce the absolute highest quality, richest 2026 GB1 golden standard version.
+Return ONLY the complete clean markdown (with frontmatter if appropriate). No extra text whatsoever.`;
+
+          const hermesCall = await callHermesDeep(richPrompt);
+          if (hermesCall.success && hermesCall.output && hermesCall.output.length > 200) {
+            appliedContent = hermesCall.output;
+            usedDeepHermes = true;
+          }
+        }
+
+        if (!appliedContent) {
+          // Fallback to local high-quality template
+          appliedContent = generateFullPolishedCard(technique);
+        }
+
+        const fullApply = await applyPolishedTechniqueCard(slug, appliedContent);
+
+        // Also improve personal notes quickly (local for speed)
         const quickImproved = generateQuickGoldenNotes(technique);
         wrote = await updatePersonalNotes(slug, quickImproved);
 
-        // Automatically include specific media and photo refs for full standard
+        // Add media placeholders
         await applyMediaSuggestions(slug, {
           photos: [
             { description: "Forearm block against high round kick, elbow tight to temple, weight shifted offline" },
@@ -241,16 +367,16 @@ The updates I can do will write directly to the server's vault copy (live on the
           ]
         });
 
-        resp = `✅ Created Hermes task (for record) and **directly applied full polished golden standard content** to the live vault for **${techniqueName}**.\n\n`;
-        resp += `The entire card (structure + sections + specific media and photo refs) has been updated on the server.\n\n`;
-        if (taskResult && taskResult.taskContent) {
-          resp += `Since you don't have Hermes Desktop watcher set up yet, here's the full task content you can copy and send to Hermes:\n\n`;
-          resp += `\`\`\`\n${taskResult.taskContent}\n\`\`\`\n\n`;
-          resp += `After Hermes replies with the polished card, paste the output here and say "apply this Hermes polished card" — I'll write it directly to the vault.\n\n`;
+        if (usedDeepHermes) {
+          resp = `✅ High-quality update from Hermes applied directly to the live vault for **${techniqueName}**.\n\n`;
+        } else {
+          resp = `✅ Polished using golden standard template and applied to the live vault for **${techniqueName}**.\n\n`;
         }
+
         if (wrote || fullApply.success) {
-          resp += `Refresh the page (or pull-to-refresh) to see the current version. No Obsidian or sync needed.`;
+          resp += `Refresh the page (or pull-to-refresh) to see the updated card. No Obsidian or manual sync needed.`;
         }
+        resp += pendingHermesNotice;
       }
 
       if (wantsPhotos) {
@@ -261,7 +387,7 @@ The updates I can do will write directly to the server's vault copy (live on the
             { description: "Finish or pressure application for " + techniqueName },
           ]
         });
-        resp += `\n\n✅ Directly added photo placeholders in the Media section (using the vault's [PHOTO: ] syntax for now, since real images aren't in the vault yet). Refresh to see the updated card with suggested photos included. No Hermes task needed for this.`;
+        resp += `\n\n✅ Directly added photo placeholders in the Media section. Refresh to see.`;
       }
 
       return NextResponse.json({ success: true, response: resp, changesApplied: wrote || wantsPhotos });
@@ -429,7 +555,7 @@ I can directly improve or rewrite sections. Try the one-click buttons above or s
 
     return NextResponse.json({
       success: true,
-      response: smartAnswer + `\n\n(Direct actions available: polish, improve cues, media — all write to the live vault on refresh.)`
+      response: smartAnswer + `\n\n(Direct actions available: polish, improve cues, media — all write to the live vault on refresh.)${pendingHermesNotice}`
     });
 
   } catch (e: any) {

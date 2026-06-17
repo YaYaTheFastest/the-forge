@@ -775,12 +775,24 @@ export async function createHermesTechniquePolishTask(
 
   const taskDir = HERMES_TASKS_DIR();
 
+  // Load permanent instructions to give Hermes the full standing orders (seamless high quality)
+  let permanentInstructions = '';
+  const goldenPath = path.join(getVaultRoot(), 'Hermes - BJJ Card Golden Standard Instructions.md');
+  const bestStandardPath = path.join(getVaultRoot(), 'BJJ-Hermes-Permanent-Best-Standard.md');
+  try {
+    const [golden, best] = await Promise.all([
+      fs.readFile(goldenPath, 'utf8').catch(() => ''),
+      fs.readFile(bestStandardPath, 'utf8').catch(() => '')
+    ]);
+    permanentInstructions = [best, golden].filter(Boolean).join('\n\n---\n\n');
+  } catch {}
+
   try {
     await fs.mkdir(taskDir, { recursive: true });
 
     const focus = context.focusAreas && context.focusAreas.length > 0
       ? context.focusAreas.join(', ')
-      : 'Full 2026 GB1 Standard, Personal cues quality, Structure, clarity, media';
+      : 'Full 2026 GB1 Standard, Personal cues quality, Structure, clarity, media, connections and cross-references';
 
     const changeNote = context.recentChange
       ? `\n**Recent Change Detected**: ${context.recentChange}\n`
@@ -799,6 +811,10 @@ export async function createHermesTechniquePolishTask(
 
 ${changeNote}${triggeredNote}
 
+## Permanent Standing Orders (non-negotiable)
+
+${permanentInstructions || 'Follow the permanent 2026 GB1 golden standard for highest quality cards. Always deliver production-ready, richest version with full sections, media, tags, and cues.'}
+
 ## Context (for Hermes)
 
 Polish this technique card to the permanent 2026 GB1 golden standard.
@@ -806,10 +822,11 @@ Polish this technique card to the permanent 2026 GB1 golden standard.
 Use the full current card content below as baseline.
 
 Improve:
-- Clear, field-usable Execute steps
+- Clear, field-usable Execute steps (recipe format with bold actions)
 - Fatigue-aware, testable Personal Cues & Notes
-- Structure, clarity, any media suggestions
+- Structure, clarity, any media suggestions (videos + [PHOTO:] descriptions)
 - Common failures and when it wins
+- Related techniques and principle tags where connections are clear
 
 ## Current Card Content
 
@@ -819,7 +836,7 @@ ${technique.content || '(content)'}
 
 ## Output Instructions
 
-Return the full updated technique card in clean markdown.
+Return the full updated technique card in clean markdown (with frontmatter if possible).
 
 After generating, append it to the END of THIS task file under a new section:
 
@@ -827,7 +844,7 @@ After generating, append it to the END of THIS task file under a new section:
 
 [the full clean markdown here]
 
-This way Grok can automatically apply it from the live vault.
+This way Grok can automatically apply it from the live vault with zero manual copy/paste.
 
 *Generated automatically by live Grok chat on the deployed Forge ${today}*
 `;
