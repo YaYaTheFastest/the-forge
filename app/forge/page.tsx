@@ -116,9 +116,10 @@ export default async function ForgePage() {
             const ragColor = rag === 'red' ? 'bg-red-500' : rag === 'yellow' ? 'bg-amber-500' : 'bg-emerald-500';
 
             // Rough content status (in real use this would be parsed from richCardPath)
-            const hasSchedule = eq.content?.includes("## Maintenance Schedule") ? "MS ✓" : "MS ✗";
-            const hasInstructions = eq.content?.includes("## Service Instructions") ? "SI ✓" : "SI ✗";
-            const photoCount = (eq.content?.match(/\[PHOTO:/g) || []).length;
+            const content = (eq as any).content || '';
+            const hasSchedule = content.includes("## Maintenance Schedule") ? "MS ✓" : "MS ✗";
+            const hasInstructions = content.includes("## Service Instructions") ? "SI ✓" : "SI ✗";
+            const photoCount = (content.match(/\[PHOTO:/g) || []).length;
             const contentStatus = `${hasSchedule} ${hasInstructions} 📷${photoCount}`;
 
             return (
