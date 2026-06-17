@@ -19,9 +19,10 @@ async function callHermesDeep(prompt: string): Promise<{ success: boolean; outpu
   }
 
   try {
-    // Use single quotes and escape internal single quotes
+    // Use tailscale ssh for seamless auth over the tailnet (no separate keys needed)
+    // sshHost is like darrenjorgenson@darrens-mac-mini
     const escaped = prompt.replace(/'/g, "'\\''");
-    const cmd = `ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -o ServerAliveInterval=10 ${sshHost} 'hermes -z '"'"'${escaped}'"'"' '`;
+    const cmd = `tailscale ssh ${sshHost} 'hermes -z '"'"'${escaped}'"'"' '`;
 
     const { stdout, stderr } = await execAsync(cmd, {
       timeout: 180000, // 3 minutes for deep processing
@@ -29,7 +30,7 @@ async function callHermesDeep(prompt: string): Promise<{ success: boolean; outpu
     });
 
     if (stderr) {
-      console.warn('[Hermes SSH] stderr:', stderr.substring(0, 500));
+      console.warn('[Hermes Tailscale SSH] stderr:', stderr.substring(0, 500));
     }
 
     const output = (stdout || '').trim();
@@ -40,7 +41,7 @@ async function callHermesDeep(prompt: string): Promise<{ success: boolean; outpu
     return { success: true, output };
   } catch (err: any) {
     const msg = err?.message || String(err);
-    console.error('[Hermes SSH] error:', msg);
+    console.error('[Hermes Tailscale SSH] error:', msg);
     return { success: false, output: '', error: msg };
   }
 }
