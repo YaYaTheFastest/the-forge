@@ -124,7 +124,7 @@ export default function DailyWinsPage() {
     setTodaysPlan(updated);
 
     // Real Forge state logging flow (Option A)
-    if (newCompleted && item.category === 'Equipment' && item.type === 'maintenance') {
+    if (newCompleted && item.category === 'Equipment' && item.serviceType === 'maintenance') {
       setTimeout(async () => {
         const hoursStr = prompt(`New current hours on the equipment?`, "");
         if (!hoursStr) return;
@@ -288,7 +288,7 @@ export default function DailyWinsPage() {
             {fitnessSuggestions.map((item, idx) => (
               <div
                 key={idx}
-                onClick={() => addToPlan('Fitness', item.name, item.type)}
+                onClick={() => addToPlan('Fitness', item.name, item.serviceType)}
                 className="group flex items-center justify-between p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl cursor-pointer transition-colors"
               >
                 <div>
@@ -342,7 +342,7 @@ export default function DailyWinsPage() {
                     View notes
                   </button>
                   <button
-                    onClick={() => addToPlan('Equipment', item.name, item.type, { slug: item.slug })}
+                    onClick={() => addToPlan('Equipment', item.name, item.serviceType, { slug: item.slug })}
                     className="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-white border border-amber-200 hover:bg-amber-50 rounded-xl font-medium text-amber-700 transition-all"
                   >
                     Add
@@ -373,7 +373,7 @@ export default function DailyWinsPage() {
             {choresSuggestions.map((item, idx) => (
               <div
                 key={idx}
-                onClick={() => addToPlan('Chores', item.name, item.type)}
+                onClick={() => addToPlan('Chores', item.name, item.serviceType)}
                 className="group flex items-center justify-between p-2.5 bg-sky-50 hover:bg-sky-100 border border-sky-100 rounded-2xl cursor-pointer transition-colors"
               >
                 <div className="font-semibold text-sm">{item.name}</div>
