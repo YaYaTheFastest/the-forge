@@ -15,7 +15,15 @@ export const getAllTechniques = cache(async function getAllTechniques(): Promise
   }
 
   try {
-    const allMdFiles = await getAllMdFiles(VAULT_PATH);
+    // Prefer scanning inside BJJ for techniques (avoid picking up unrelated .md from other domains)
+    const bjjPath = path.join(VAULT_PATH, '20 Knowledge Base', 'BJJ');
+    let scanPath = VAULT_PATH;
+    try {
+      await fs.access(bjjPath);
+      scanPath = bjjPath;
+    } catch {}
+
+    const allMdFiles = await getAllMdFiles(scanPath);
     const techniques: TechniqueCard[] = [];
 
     for (const filePath of allMdFiles) {

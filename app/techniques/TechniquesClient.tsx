@@ -26,6 +26,11 @@ const categoryStyles: Record<string, { bg: string; text: string; label: string }
 
 const allCategories = Object.keys(categoryStyles);
 
+// Dedup buttons by unique label (avoid "Guard Pass" etc appearing multiple times from synonyms)
+const categoryButtons = Array.from(
+  new Map(allCategories.map(cat => [getCategoryStyle(cat).label, cat])).values()
+);
+
 function getCategoryHex(cat?: string): string {
   const key = (cat || '').toLowerCase();
   const map: Record<string, string> = {
@@ -209,7 +214,7 @@ export default function TechniquesClient({
         <div>
           <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Categories</div>
           <div className="flex flex-wrap gap-2">
-            {allCategories.map(cat => {
+            {categoryButtons.map(cat => {
               const active = selectedCategories.includes(cat);
               const style = getCategoryStyle(cat);
               return (
