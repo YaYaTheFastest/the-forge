@@ -191,21 +191,21 @@ export default async function TechniquePage({ params }: Props) {
 
 // Small helpers duplicated for the detail page (kept simple)
 const detailCategoryStyles: Record<string, { bg: string; text: string; label: string }> = {
-  submission: { bg: 'bg-red-100 text-red-700', label: 'Submission' },
-  sweep: { bg: 'bg-blue-100 text-blue-700', label: 'Sweep' },
-  'guard-pass': { bg: 'bg-emerald-100 text-emerald-700', label: 'Guard Pass' },
-  pass: { bg: 'bg-emerald-100 text-emerald-700', label: 'Pass' },
-  defense: { bg: 'bg-slate-100 text-slate-700', label: 'Defense' },
-  escape: { bg: 'bg-amber-100 text-amber-700', label: 'Escape' },
-  takedown: { bg: 'bg-orange-100 text-orange-700', label: 'Takedown' },
-  transition: { bg: 'bg-violet-100 text-violet-700', label: 'Transition' },
-  'guard-recovery': { bg: 'bg-cyan-100 text-cyan-700', label: 'Guard Recovery' },
-  'self-defense': { bg: 'bg-rose-100 text-rose-700', label: 'Self Defense' },
+  submission: { bg: 'bg-red-100', text: 'text-red-700', label: 'Submission' },
+  sweep: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Sweep' },
+  'guard-pass': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Guard Pass' },
+  pass: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Pass' },
+  defense: { bg: 'bg-slate-100', text: 'text-slate-700', label: 'Defense' },
+  escape: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Escape' },
+  takedown: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Takedown' },
+  transition: { bg: 'bg-violet-100', text: 'text-violet-700', label: 'Transition' },
+  'guard-recovery': { bg: 'bg-cyan-100', text: 'text-cyan-700', label: 'Guard Recovery' },
+  'self-defense': { bg: 'bg-rose-100', text: 'text-rose-700', label: 'Self Defense' },
 };
 
 function getCategoryStyleForDetail(cat?: string) {
   const key = (cat || '').toLowerCase();
-  return detailCategoryStyles[key] || { bg: 'bg-gray-100 text-gray-700', label: cat || 'Technique' };
+  return detailCategoryStyles[key] || { bg: 'bg-gray-100', text: 'text-gray-700', label: cat || 'Technique' };
 }
 
 function getCategoryHexForDetail(cat?: string): string {
