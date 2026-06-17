@@ -6,7 +6,7 @@
 # and gives you the live URL.
 #
 # After running this, the app on the droplet has the latest everything.
-# You can then use the floating Grok chat on the live site (http://161.35.97.99:3000)
+# You can then use the floating Grok chat on the live site (https://rockinjracing.com)
 # to ask questions or request updates. Many updates will complete automatically
 # with no further steps from you (the backend writes directly to the droplet's vault).
 #
@@ -32,7 +32,10 @@ echo "   (the GH Action will auto-deploy to the droplet)"
 echo ""
 echo "=== Done ==="
 echo "Live app (with floating chat that can read/write the live vault):"
-echo "http://161.35.97.99:3000"
+echo "https://rockinjracing.com"
+echo ""
+echo "NOTE: The site is protected with HTTP Basic Auth (username + password)."
+echo "You will be prompted in the browser on first visit. Save the password in your browser."
 echo ""
 echo "Use the chat button on the live site for questions + updates."
 echo "No Mac required for access or chat-driven changes."

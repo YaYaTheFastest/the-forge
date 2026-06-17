@@ -48,5 +48,6 @@ fi
 # echo "Restarting the app on droplet..."
 # ssh "$DROPLET" 'cd /root/the-forge && pm2 restart the-forge --update-env || pm2 start npm --name "the-forge" -- start'
 
-echo "Done. Access the live app (with floating chat) at http://161.35.97.99:3000"
+echo "Done. Access the live app (with floating chat) at https://rockinjracing.com"
+echo "The site requires HTTP Basic Auth (browser will prompt for username/password)."
 echo "The chat on the live site can directly update the droplet's vault with no Mac involvement."
