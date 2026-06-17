@@ -31,11 +31,14 @@ export const getAllTechniques = cache(async function getAllTechniques(): Promise
         const fileContent = await fs.readFile(filePath, 'utf8');
         const { data, content } = matter(fileContent);
 
-        if (data.position || data.gb_curriculum || data.name) {
+        const baseName = path.basename(filePath);
+        const hasYamlKeys = !!(data.position || data.gb_curriculum || data.name);
+        const looksLikeTechnique = /^GB1-|^Other -/i.test(baseName);
+        if (hasYamlKeys || looksLikeTechnique) {
           const personalNotesMatch = content.match(/### Personal Cues & Notes\s*\n([\s\S]*?)(?=\n###|$)/);
           const personalNotes = personalNotesMatch ? personalNotesMatch[1].trim() : '';
 
-          const fileName = path.basename(filePath);
+          const fileName = baseName;
           const slug = fileName.replace('.md', '').normalize('NFC').replace(/[—–−]/g, '-');
           techniques.push({
             slug,
@@ -104,6 +107,13 @@ export async function getTechniqueBySlug(slug: string): Promise<TechniqueCard | 
   // Exact match (preferred, with dash norm)
   const exact = techniques.find(t => t.slug === normalizedSlug || t.slug.replace(/[—–−]/g, '-') === normalizedSlug);
   if (exact) return exact;
+
+  // Robust key match: strips EVERYTHING except alphanum (handles " - " vs " — " vs "–", extra spaces, GB1- prefixes, etc.)
+  // This is the key fix for real vault filenames that use em/en dashes or slight formatting diffs vs URL slugs.
+  const key = (s: string) => (s || '').normalize('NFC').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const targetKey = key(normalizedSlug);
+  const robust = techniques.find(t => key(t.slug) === targetKey || key(t.name || '') === targetKey);
+  if (robust) return robust;
 
   // Fallback 1: match against the 'name' field
   const byName = techniques.find(t => t.name === normalizedSlug || (t.name && t.name.replace(/[—–−]/g, '-') === normalizedSlug));
