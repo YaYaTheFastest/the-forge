@@ -39,6 +39,11 @@ export default function TheMatDomainPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-6 md:p-8">
+      <div className="mb-4">
+        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground hover:underline">
+          ← Back to The Forge
+        </Link>
+      </div>
       <div className="mb-10">
         <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium tracking-widest text-muted-foreground mb-3">
           DOMAIN • THE MAT
