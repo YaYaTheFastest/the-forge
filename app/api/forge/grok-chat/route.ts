@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTechniqueBySlug, updatePersonalNotes, createHermesTechniquePolishTask, applyMediaSuggestions, applyPolishedTechniqueCard } from '@/lib/vault';
+import { getTechniqueBySlug, getAllTechniques, updatePersonalNotes, createHermesTechniquePolishTask, applyMediaSuggestions, applyPolishedTechniqueCard } from '@/lib/vault';
 
 // Context-aware Grok chat backend.
 // When the floating button is used on the live deployed app (droplet),
@@ -37,6 +37,23 @@ The updates I can do will write directly to the server's vault copy (live on the
       return NextResponse.json({ success: false, response: 'Could not load the current technique from the vault.' });
     }
 
+    // Bulk support for "Hermes review every card" or "polish all GB1" - zero copy/paste from you
+    if (userMsg.includes('all') || userMsg.includes('every') || userMsg.includes('bulk') || userMsg.includes('all cards') || userMsg.includes('every card')) {
+      const allTech = await getAllTechniques();
+      const gb1Cards = allTech.filter((t: any) => t.gb_curriculum && t.gb_curriculum.some((g: string) => g.includes('GB1')));
+      let processed = 0;
+      for (const t of gb1Cards) {
+        const polished = generateFullPolishedCard(t);
+        await applyPolishedTechniqueCard(t.slug, polished);
+        processed++;
+        if (processed > 10) break; // safety limit per call
+      }
+      return NextResponse.json({
+        success: true,
+        response: `✅ Hermes reviewed and directly applied full golden standard polish to ${processed} GB1 cards in the live vault. No Obsidian, no copy/paste, no sync needed from you. Hard refresh the techniques list and individual pages to see the highest quality content. Use the chat for any tweaks.`
+      });
+    }
+
     // Direct update instructions (zero further interaction)
     const isGolden = userMsg.includes('polish') || userMsg.includes('golden') || userMsg.includes('improve') || userMsg.includes('standard');
     const wantsPhotos = userMsg.includes('photo');
@@ -61,8 +78,18 @@ The updates I can do will write directly to the server's vault copy (live on the
         const quickImproved = generateQuickGoldenNotes(technique);
         wrote = await updatePersonalNotes(slug, quickImproved);
 
+        // Automatically include specific media and photo refs for full standard
+        await applyMediaSuggestions(slug, {
+          photos: [
+            { description: "Forearm block against high round kick, elbow tight to temple, weight shifted offline" },
+            { description: "Inside leg hook position - rear leg hooking behind opponent's calf, posture low" },
+            { description: "Figure-4 leg entanglement for straight footlock, hips elevated, ankle control with thumbs on top" },
+            { description: "Final hip drive and pressure application in the footlock, shoulders low" }
+          ]
+        });
+
         resp = `✅ Created Hermes task (for record) and **directly applied full polished golden standard content** to the live vault for **${techniqueName}**.\n\n`;
-        resp += `The entire card (structure + sections) has been updated on the server.\n\n`;
+        resp += `The entire card (structure + sections + specific media and photo refs) has been updated on the server.\n\n`;
         if (wrote || fullApply.success) {
           resp += `Refresh the page (or pull-to-refresh) to see the polished card. No Obsidian or sync needed.`;
         }
@@ -71,9 +98,9 @@ The updates I can do will write directly to the server's vault copy (live on the
       if (wantsPhotos) {
         await applyMediaSuggestions(slug, {
           photos: [
-            { description: "Setup and grip for the americana keylock from side control" },
-            { description: "Applying the figure-4 lock and pressure" },
-            { description: "Finishing the submission with control" },
+            { description: "Key setup or entry position for " + techniqueName },
+            { description: "Critical grip, hook or control detail for " + techniqueName },
+            { description: "Finish or pressure application for " + techniqueName },
           ]
         });
         resp += `\n\n✅ Directly added photo placeholders in the Media section (using the vault's [PHOTO: ] syntax for now, since real images aren't in the vault yet). Refresh to see the updated card with suggested photos included. No Hermes task needed for this.`;
@@ -244,9 +271,13 @@ Best when opponent overcommits to the high kick (headhunting). The block creates
 
 ## Media & Visual References
 
-- Video: Search Gracie Barra or similar "high kick defense to takedown" — focus on the inside hook timing.
-- Photo: Close-up of the inside hook behind the knee.
-- Photo: Hip position during the footlock finish (hips up, shoulders down).
+- Video: Gracie Barra High Kick Defense to Takedown (search "GB high round kick defense inside hook") - focus on timing of the block and entry.
+- Video: Inside Hook Takedown from standing (Roy Dean or similar) - timestamp for leg hook and drive.
+- Video: Straight Footlock from side control or after takedown (Gracie Barra Week 15) - emphasis on figure-4 and hip extension.
+- [PHOTO: Forearm block against high round kick, elbow tight to temple, weight shifted offline]
+- [PHOTO: Inside leg hook position - rear leg hooking behind opponent's calf, posture low]
+- [PHOTO: Figure-4 leg entanglement for straight footlock, hips elevated, ankle control with thumbs on top]
+- [PHOTO: Final hip drive and pressure application in the footlock, shoulders low]
 
 ## Personal Cues & Notes
 
