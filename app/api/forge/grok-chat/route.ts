@@ -330,83 +330,79 @@ photos: []
 **Category:** ${category}  
 **ID:** ${technique.id || ''}
 
+## Videos (Gracie Barra Preferred - Click to Play)
+
+**Gracie Barra Official / Recommended:**
+- [Gracie Barra: ${name} Technique](https://www.youtube.com/results?search_query=gracie+barra+${encodeURIComponent(name)})
+- Search YouTube: "Gracie Barra ${name}" for official curriculum videos. Prioritize GB sources for accurate mechanics and timing.
+
+**Additional Recommended (Gracie Barra Focus):**
+- Look for GB videos demonstrating similar entries, controls, and finishes. Click links to play directly in browser.
+
+## Visual References & Photos
+
+**Key Photos to Embed (use [PHOTO: ] syntax or upload real images to vault):**
+- [PHOTO: Key entry or control position for ${name}]
+- [PHOTO: Critical grip, hook, or isolation detail]
+- [PHOTO: Finish or pressure mechanics]
+- [PHOTO: Common angle or correction]
+
 ## **Concept**
 
-${name} is a high-percentage self-defense sequence from standing. It combines a strong block against a high round kick with an explosive inside hook entry for the takedown, flowing seamlessly into a straight footlock finish. The technique prioritizes timing, base, and leverage over strength, making it effective under fatigue and against larger opponents.
+${name} is a high-percentage ${category} from ${position}. It uses precise timing, leverage, and control to achieve the goal, emphasizing fatigue-resistant mechanics and seamless transitions. The technique follows the 2026 GB1 golden standard for clarity, safety, and effectiveness under resistance.
 
 ## **Setup**
 
-- You are in a standing position, hands up, weight balanced on the balls of your feet.
-- Opponent throws a high round kick (rear leg typically) aimed at your head.
-- Key cues: Watch the chambering of the kick leg. Step offline at 45 degrees while blocking.
-- Goal: Disrupt the kick's power, close distance immediately, control the leg, and finish on the ground.
+- You are in ${position} position with balanced posture and ready hands.
+- Opponent is in a position that allows the entry for ${name}.
+- Key elements: control the opponent's base and structure, isolate the target limb or position.
+- Goal: Execute with minimal energy, using body mechanics and opponent's movement.
 
 ## **Execution**
 
-**1. Block the high round kick**
-- As the kick rises, raise your lead forearm or use a cross block with palm/forearm to meet the shin.
-- Keep elbow tight to your head, absorb with structure not just arms.
-- Simultaneously step 45 degrees offline to remove your head from the kick line.
-- Cue: "Meet the kick with your whole body, not just the arm."
+**1. Establish control and entry**
+- Secure dominant position and connection.
+- Use the opponent's reaction or commitment to create the opening.
+- Maintain low base and strong posture.
+- Cue: "Control first, then commit."
 
-**2. Enter with inside hook**
-- Immediately after contact, explode forward with your rear leg.
-- Hook your rear leg behind the opponent's standing leg (target the calf or knee).
-- Posture low, head off centerline, drive with your hips.
-- Secure the kicked leg with your lead hand if possible for control.
-- Cue: "Explode on the block – hook and drive as one motion."
+**2. Isolate the target**
+- Disrupt the opponent's structure or limb.
+- Use grips, hooks, or pressure to isolate.
+- Keep your own base and balance.
+- Cue: "Isolate without overcommitting."
 
-**3. Complete the takedown**
-- Use the hook to trip or sweep while pushing the upper body with your hands/shoulders.
-- Keep the hooked leg high and controlled.
-- Drive through with your hips and base.
-- Land in side control or transition to half guard while maintaining leg control.
-- Cue: "Hips high, shoulders low – use your whole body to finish the trip."
+**3. Apply the technique**
+- Use mechanical advantage (leverage, weight, angle).
+- Progress the pressure or motion gradually then decisively.
+- Maintain control throughout.
+- Cue: "Leverage over strength, timing over speed."
 
-**4. Transition to straight footlock**
-- Isolate the foot as soon as you have ground control.
-- Wrap your legs in a figure-4 (one shin across the opponent's shin, the other leg threading through).
-- Grab the foot with both hands, thumbs on top for leverage.
-- Elevate your hips while keeping the knee trapped.
-- Apply steady then progressive pressure.
-- Cue: "Control the ankle, not the toes. Hips up for the finish."
+**4. Finish and control**
+- Complete the submission, sweep, or position.
+- Secure the finish or transition.
+- Be prepared for resistance or follow-ups.
+- Cue: "Finish with control, not force."
 
 **Fatigue & Pressure Reality (2026 GB1 standard):**
-- This falls apart first when tired or vs heavier/posturing opponent. The first cue that disappears is the explosive entry after the block.
-- Under resistance, the early failure is usually poor angle on the hook or losing the leg control on the way down.
+- This falls apart first when tired or vs heavier/posturing opponent. The first cue that disappears is [key timing or connection].
+- Under resistance, the early failure is usually [common structural break].
 
 **My Personal "Feels Right" Cues:**
-- Heavy chest / sticky connection before the finish.
-- Wait for commitment then explode.
-- Keep base low and knees tight.
+- [Main connection or pressure feel].
+- [Timing cue].
+- [Safety/base cue].
 
 ## **Common Mistakes**
 
-- Rushing before full isolation or base.
+- Rushing before full control or base.
 - Using arm strength instead of body weight and leverage.
-- Poor knee/hip position allowing escape.
-- Not controlling the leg during the takedown transition.
-- Grabbing toes instead of the whole foot for the lock.
+- Poor positioning allowing escape or reversal.
+- Losing the isolation during transition.
 
 ## **When It Wins**
 
-- Best when opponent overcommits to the high kick (headhunting).
-- The block creates the opening for the close.
-- Transitions well to other ground attacks if the footlock is defended.
-- Use in self-defense when de-escalation fails or against aggressive strikers.
-
-## **Media & Visual References**
-
-**Videos:**
-- Gracie Barra High Kick Defense to Takedown (search "GB high round kick defense inside hook") - focus on timing of the block and entry.
-- Inside Hook Takedown from standing (Roy Dean or similar) - timestamp for leg hook and drive.
-- Straight Footlock from side control or after takedown (Gracie Barra Week 15) - emphasis on figure-4 and hip extension.
-
-**Photos / Visuals:**
-- [PHOTO: Forearm block against high round kick, elbow tight to temple, weight shifted offline]
-- [PHOTO: Inside leg hook position - rear leg hooking behind opponent's calf, posture low]
-- [PHOTO: Figure-4 leg entanglement for straight footlock, hips elevated, ankle control with thumbs on top]
-- [PHOTO: Final hip drive and pressure application in the footlock, shoulders low]
+Best against specific reactions or positions where the isolation is available. Use when the opponent [common trigger]. Transitions to [related] if defended.
 
 ## **Personal Cues & Notes**
 
