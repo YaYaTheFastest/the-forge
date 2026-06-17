@@ -7,7 +7,7 @@ import type { FitnessEntity, TechniqueCard, ShopEquipment, MindMap, MindMapMeta 
 
 export type { TechniqueCard, FitnessEntity, MindMap, MindMapMeta } from './types';
 
-const VAULT_PATH = process.env.THE_MAT_VAULT_PATH || '';
+const VAULT_PATH = process.env.THE_MAT_VAULT_PATH || '/opt/vault';
 
 export const getAllTechniques = cache(async function getAllTechniques(): Promise<TechniqueCard[]> {
   if (!VAULT_PATH) {
@@ -15,13 +15,10 @@ export const getAllTechniques = cache(async function getAllTechniques(): Promise
   }
 
   try {
-    const files = await fs.readdir(VAULT_PATH);
-    const mdFiles = files.filter(f => f.endsWith('.md'));
-
+    const allMdFiles = await getAllMdFiles(VAULT_PATH);
     const techniques: TechniqueCard[] = [];
 
-    for (const file of mdFiles) {
-      const filePath = path.join(VAULT_PATH, file);
+    for (const filePath of allMdFiles) {
       try {
         const fileContent = await fs.readFile(filePath, 'utf8');
         const { data, content } = matter(fileContent);
@@ -30,9 +27,10 @@ export const getAllTechniques = cache(async function getAllTechniques(): Promise
           const personalNotesMatch = content.match(/### Personal Cues & Notes\s*\n([\s\S]*?)(?=\n###|$)/);
           const personalNotes = personalNotesMatch ? personalNotesMatch[1].trim() : '';
 
+          const fileName = path.basename(filePath);
           techniques.push({
-            slug: file.replace('.md', '').normalize('NFC'),
-            name: data.name || file.replace('.md', ''),
+            slug: fileName.replace('.md', '').normalize('NFC'),
+            name: data.name || fileName.replace('.md', ''),
             position: data.position,
             category: data.category,
             videos: data.videos || data.video ? (Array.isArray(data.videos) ? data.videos : data.video ? [data.video] : []) : [],
@@ -51,7 +49,7 @@ export const getAllTechniques = cache(async function getAllTechniques(): Promise
         }
       } catch (fileError: any) {
         // Defensive: one bad file (e.g. malformed YAML frontmatter) should not break the entire app
-        console.error(`Error parsing technique file: ${file} — ${fileError.message || fileError}`);
+        console.error(`Error parsing technique file: ${path.basename(filePath)} — ${fileError.message || fileError}`);
         // Continue to next file
       }
     }
@@ -63,6 +61,21 @@ export const getAllTechniques = cache(async function getAllTechniques(): Promise
     return [];
   }
 });
+
+async function getAllMdFiles(dir: string): Promise<string[]> {
+  const dirents = await fs.readdir(dir, { withFileTypes: true });
+  const files: string[] = [];
+  for (const dirent of dirents) {
+    const res = path.join(dir, dirent.name);
+    if (dirent.isDirectory()) {
+      files.push(...await getAllMdFiles(res));
+    } else if (dirent.name.endsWith('.md')) {
+      files.push(res);
+    }
+  }
+  return files;
+}
+
 
 export async function getTechniqueBySlug(slug: string): Promise<TechniqueCard | null> {
   const techniques = await getAllTechniques();
