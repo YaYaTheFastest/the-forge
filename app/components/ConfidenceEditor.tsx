@@ -9,11 +9,13 @@ interface ConfidenceEditorProps {
 }
 
 export function ConfidenceEditor({ slug, initialValue }: ConfidenceEditorProps) {
-  const [value, setValue] = useState(initialValue);
+  const clampedInitial = Math.max(0, Math.min(5, Math.round(initialValue || 0)));
+  const [value, setValue] = useState(clampedInitial);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const handleChange = async (newValue: number) => {
-    setValue(newValue);
+    const clamped = Math.max(0, Math.min(5, Math.round(newValue || 0)));
+    setValue(clamped);
     setStatus('saving');
 
     try {

@@ -13,7 +13,8 @@ interface StarRatingProps {
 }
 
 export function StarRating({ value = 0, size = 'md', showNumber = true, className, editable = false, onChange }: StarRatingProps) {
-  const filled = Math.max(0, Math.min(5, Math.round(value || 0)));
+  const clamped = Math.max(0, Math.min(5, Math.round(value || 0)));
+  const filled = clamped;
   const sizeClasses = {
     sm: 'w-3.5 h-3.5',
     md: 'w-4 h-4',
@@ -53,7 +54,7 @@ export function StarRating({ value = 0, size = 'md', showNumber = true, classNam
       })}
       {showNumber && (
         <span className="ml-1.5 text-xs font-medium text-muted-foreground tabular-nums">
-          {value}/5
+          {clamped}/5
         </span>
       )}
     </div>

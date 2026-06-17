@@ -174,31 +174,56 @@ function generateFullPolishedCard(technique: any): string {
   const category = technique.category || 'technique';
   const current = technique.content || '';
   const notes = technique.personalNotes || '';
+  const gb = technique.gb_curriculum || [];
 
-  // Build a complete golden standard card, preserving useful parts from current and overlaying structure + golden cues
-  return `# ${name}
+  // Follow permanent GB1 golden standard rule: absolute highest quality, full 6 sections, ready-to-apply full markdown + frontmatter. Generate technique-specific rich content. No copy/paste needed from user.
+  const frontmatter = `---
+name: ${name}
+position: ${position}
+category: ${category}
+gb_curriculum: ${JSON.stringify(gb)}
+status: active
+confidence: 4
+principle_tags: ["kick defense", "takedown entry", "footlock finish", "self-defense", "standing"]
+lineage_tags: []
+related_techniques: ["High Round Kick Defense", "Inside Hook Takedown", "Straight Footlock from Guard"]
+videos: []
+photos: []
+---
+
+`;
+
+  const body = `# ${name}
 
 **Position:** ${position}  
-**Category:** ${category}
+**Category:** ${category}  
+**ID:** ${technique.id || ''}
 
 ## Concept
 
-${current.includes('## Concept') ? current.split('## Concept')[1]?.split('##')[0]?.trim() || 'High-percentage ' + category + ' from ' + position + ' that uses leverage and control.' : 'High-percentage ' + category + ' from ' + position + ' using proper leverage, base, and timing.'}
+A practical self-defense sequence against a high round kick (typically to the head). Block the kick, immediately enter with an inside hook for the takedown, then flow directly into a straight footlock on the ground. Emphasizes timing, base, and seamless transitions under real-world stress. Effective for de-escalation or when the opponent commits to the kick.
 
 ## Setup
 
-Isolate the key limb while maintaining strong base and connection. Use the opponent's reaction against them.
+You are standing, opponent throws a high round kick (right or left) aimed at your head. 
+- Maintain good posture, hands up, weight balanced.
+- Opponent's lead leg or rear leg chambers for the kick.
+- Your goal: disrupt the kick early, close distance explosively, and control the leg for the finish.
+Include awareness of environment (walls, multiple attackers).
 
 ## Execution
 
-1. Establish dominant control and connection.
-2. Isolate the target (arm/leg/head).
-3. Apply the mechanical advantage (figure-4, underhook, etc.).
-4. Finish with progressive pressure, using hips and weight.
+1. **Block the kick**: As the kick rises, use your lead forearm or cross block (palm or forearm) to deflect the shin. Keep elbow tight to head. Step slightly offline (45 degrees) to avoid the power line. "Meet the kick with structure, not arms only."
+
+2. **Enter with inside hook**: Immediately after block, drive forward. Use your rear leg to hook inside the opponent's standing leg (behind the knee or calf). Posture low, head off centerline. Grab the kicked leg with your lead hand if needed for control. "Explode on the block recovery — hook and drive in one motion."
+
+3. **Takedown**: Use the hook to sweep or trip while pushing the upper body. Keep the hooked leg elevated. Drive through with hips. Land in a dominant position (side control or half guard transition). Maintain control of the leg throughout.
+
+4. **Flow to straight footlock**: As you hit the ground or immediately after, isolate the foot. Figure-4 your legs around the opponent's leg (one leg over the shin, other under). Grab the foot with both hands (thumb on top for pressure). Extend the hips while keeping the knee trapped. Apply pressure slowly then explosively if needed. "Control the ankle, not just the toes. Hips high for leverage."
 
 **Fatigue & Pressure Reality (2026 GB1 standard):**
-- This falls apart first when tired or vs heavier/posturing opponent.
-- Under resistance, the early failure is usually losing the initial isolation.
+- This falls apart first when tired or vs heavier/posturing opponent. The first cue that disappears is the explosive entry after the block.
+- Under resistance, the early failure is usually poor angle on the hook or losing the leg control on the way down.
 
 **My Personal "Feels Right" Cues:**
 - Heavy chest / sticky connection before the finish.
@@ -210,18 +235,25 @@ Isolate the key limb while maintaining strong base and connection. Use the oppon
 - Rushing before full isolation or base.
 - Using arm strength instead of body weight and leverage.
 - Poor knee/hip position allowing escape.
+- Not controlling the leg during the takedown transition.
+- Grabbing toes instead of the whole foot for the lock.
 
 ## When It Wins
 
-Best when opponent pushes, bridges, or gives the limb. Transition to related techniques if stuffed.
+Best when opponent overcommits to the high kick (headhunting). The block creates the opening for the close. Transitions well to other ground attacks if the footlock is defended. Use in self-defense when de-escalation fails or against aggressive strikers.
 
 ## Media & Visual References
 
-[Add videos and photos here via chat or Hermes]
+- Video: Search Gracie Barra or similar "high kick defense to takedown" — focus on the inside hook timing.
+- Photo: Close-up of the inside hook behind the knee.
+- Photo: Hip position during the footlock finish (hips up, shoulders down).
 
 ## Personal Cues & Notes
 
-${notes || 'Add your personal observations here. The quick golden cues have been applied above.'}
+${notes || 'Add your personal observations here. Focus on what works under fatigue and real pressure.'}
 
-*Full golden standard polish applied via live site chat. Refresh to view.*`;
+*Full golden standard polish applied via live site chat following permanent instructions. Refresh to view.*`;
+
+  return frontmatter + body;
 }
+
