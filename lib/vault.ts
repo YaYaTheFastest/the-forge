@@ -278,6 +278,11 @@ export function getVaultRoot(): string {
     const idx = envPath.indexOf('Jorgenson Brain');
     return envPath.slice(0, idx + 'Jorgenson Brain'.length);
   }
+  // On the droplet (or any server) when THE_MAT_VAULT_PATH=/opt/vault, use that as the root
+  // so Fitness + Shop scans look under /opt/vault/... instead of the Mac path
+  if (envPath) {
+    return envPath;
+  }
   return DEFAULT_VAULT_ROOT;
 }
 

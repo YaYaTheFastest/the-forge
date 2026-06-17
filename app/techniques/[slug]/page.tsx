@@ -1,4 +1,4 @@
-import { getTechniqueBySlug, updatePersonalNotes, applyMediaSuggestions } from '@/lib/vault';
+import { getTechniqueBySlug, updatePersonalNotes } from '@/lib/vault';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -8,8 +8,7 @@ import { HermesAsk } from '@/app/components/HermesAsk';
 import { MediaSection } from '@/app/components/media/MediaSection';
 import { Wikilink } from '@/app/components/Wikilink';
 import { cleanTechniqueDisplayName } from '@/lib/utils';
-import { StarRating } from '@/app/components/StarRating';
-import { revalidatePath } from 'next/cache';
+import { ConfidenceEditor } from '@/app/components/ConfidenceEditor';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -41,15 +40,6 @@ export default async function TechniquePage({ params }: Props) {
     await updatePersonalNotes(technique!.slug, newNotes);
   }
 
-  async function saveConfidence(formData: FormData) {
-    'use server';
-    const newValue = parseInt(formData.get('confidence') as string, 10);
-    if (!isNaN(newValue) && newValue >= 0 && newValue <= 5) {
-      await applyMediaSuggestions(technique!.slug, { confidence: newValue });
-      revalidatePath(`/techniques/${technique!.slug}`);
-    }
-  }
-
   const categoryStyle = getCategoryStyleForDetail(technique.category);
   const accentColor = getCategoryHexForDetail(technique.category);
 
@@ -73,26 +63,10 @@ export default async function TechniquePage({ params }: Props) {
           )}
         </div>
 
-        {/* Big confidence in header */}
+        {/* Big confidence in header - uses client component to avoid passing functions from Server Component */}
         {technique.confidence !== undefined && (
           <div className="text-right shrink-0">
-            <div className="text-xs tracking-widest text-muted-foreground mb-1">YOUR CONFIDENCE</div>
-            <div className="flex items-center justify-end gap-1 text-5xl font-semibold tabular-nums">
-              {technique.confidence}
-              <span className="text-2xl text-muted-foreground">/5</span>
-            </div>
-            <div className="mt-1 flex justify-end">
-              <StarRating 
-                value={technique.confidence} 
-                editable 
-                onChange={(newValue) => {
-                  const fd = new FormData();
-                  fd.append('confidence', newValue.toString());
-                  saveConfidence(fd);
-                }} 
-                size="lg" 
-              />
-            </div>
+            <ConfidenceEditor slug={technique.slug} initialValue={technique.confidence} />
           </div>
         )}
       </div>

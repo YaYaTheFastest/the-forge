@@ -4,7 +4,7 @@ import { applyMediaSuggestions } from '@/lib/vault';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { slug, videos, photos, mediaSectionMarkdown, principle_tags, related_techniques } = body;
+    const { slug, videos, photos, mediaSectionMarkdown, principle_tags, related_techniques, confidence } = body;
 
     if (!slug) {
       return NextResponse.json({ error: 'Missing slug' }, { status: 400 });
@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
       mediaSectionMarkdown,
       principle_tags,
       related_techniques,
+      confidence,
     });
 
     if (result.success) {
