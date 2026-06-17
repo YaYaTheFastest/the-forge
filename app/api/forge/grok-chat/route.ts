@@ -19,10 +19,11 @@ async function callHermesDeep(prompt: string): Promise<{ success: boolean; outpu
   }
 
   try {
-    // Use tailscale ssh for seamless auth over the tailnet (no separate keys needed)
+    // Use plain ssh over Tailscale (name resolves via MagicDNS on droplet).
     // sshHost is like darrenjorgenson@darrens-mac-mini
+    // StrictHostKeyChecking=no because first connect or Tailscale host key handling.
     const escaped = prompt.replace(/'/g, "'\\''");
-    const cmd = `tailscale ssh ${sshHost} 'hermes -z '"'"'${escaped}'"'"' '`;
+    const cmd = `ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=15 -o ServerAliveInterval=10 ${sshHost} 'hermes -z '"'"'${escaped}'"'"' '`;
 
     const { stdout, stderr } = await execAsync(cmd, {
       timeout: 180000, // 3 minutes for deep processing
@@ -30,7 +31,7 @@ async function callHermesDeep(prompt: string): Promise<{ success: boolean; outpu
     });
 
     if (stderr) {
-      console.warn('[Hermes Tailscale SSH] stderr:', stderr.substring(0, 500));
+      console.warn('[Hermes SSH] stderr:', stderr.substring(0, 500));
     }
 
     const output = (stdout || '').trim();
@@ -41,7 +42,7 @@ async function callHermesDeep(prompt: string): Promise<{ success: boolean; outpu
     return { success: true, output };
   } catch (err: any) {
     const msg = err?.message || String(err);
-    console.error('[Hermes Tailscale SSH] error:', msg);
+    console.error('[Hermes SSH] error:', msg);
     return { success: false, output: '', error: msg };
   }
 }
