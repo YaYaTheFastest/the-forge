@@ -3,6 +3,7 @@ name: Deploy to Digital Ocean Droplet
 on:
   push:
     branches: [ main ]
+  workflow_dispatch: {}
 
 jobs:
   deploy:
@@ -16,8 +17,10 @@ jobs:
           username: root
           key: ${{ secrets.DO_SSH_KEY }}
           script: |
-            cd /root/the-forge
-            git pull origin main
-            npm install --production
-            pm2 restart the-forge || pm2 start npm --name "the-forge" -- start
-            echo "Deployed successfully!"
+            cd /opt/the-mat || cd /root/the-forge || true
+            git pull origin main || true
+            npm install
+            npm install framer-motion --save
+            npm run build
+            pm2 restart the-mat --update-env || pm2 start npm --name "the-mat" -- start --update-env
+            echo "Deployed successfully to the-mat!"
