@@ -74,8 +74,9 @@ export default function ForgeHomepage() {
           </Link>
         ))}
 
-        {/* + New Domain */}
+        {/* + New Domain - now active and prominent */}
         <button
+          type="button"
           onClick={() => {
             const evt = new CustomEvent('open-hermes-chat', {
               detail: {
@@ -84,10 +85,10 @@ export default function ForgeHomepage() {
             });
             window.dispatchEvent(evt);
           }}
-          className="group aspect-square w-full rounded-full border-2 border-dashed border-muted-foreground/50 flex flex-col items-center justify-center text-center p-6 hover:border-foreground/70 hover:bg-muted/30 transition-all"
+          className="group aspect-square w-full rounded-full border-2 border-dashed border-emerald-500/40 flex flex-col items-center justify-center text-center p-6 hover:border-emerald-500 hover:bg-emerald-500/5 hover:shadow-[0_0_30px_rgba(16,185,129,0.2)] transition-all cursor-pointer active:scale-[0.985]"
         >
-          <div className="text-5xl mb-2 opacity-70 group-hover:opacity-100">+</div>
-          <div className="font-semibold text-lg">New Domain</div>
+          <div className="text-5xl mb-2 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-transform">+</div>
+          <div className="font-semibold text-lg">+ New Domain</div>
           <div className="text-xs text-muted-foreground mt-1">Hermes will create &amp; structure it</div>
         </button>
       </div>

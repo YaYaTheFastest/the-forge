@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -14,6 +14,14 @@ export default function FloatingGrokButton() {
   const [isWriting, setIsWriting] = useState(false);
   const [currentContext, setCurrentContext] = useState<{ slug?: string; name?: string; type: string }>({ type: 'general' });
 
+  // Ref to always call the latest sendMessage (avoids stale closure from empty-deps effect)
+  const sendMessageRef = useRef(sendMessage);
+
+  // Keep ref updated
+  useEffect(() => {
+    sendMessageRef.current = sendMessage;
+  }, [sendMessage]);
+
   // Support pre-filling the chat (e.g. from + New Domain orb)
   useEffect(() => {
     const handler = (e: CustomEvent) => {
@@ -23,7 +31,7 @@ export default function FloatingGrokButton() {
         setInput(msg);
         // Auto-send the prefilled message for seamless experience (e.g. create domain)
         setTimeout(() => {
-          sendMessage(msg);
+          sendMessageRef.current(msg);
         }, 100);
       }
     };
@@ -172,14 +180,14 @@ export default function FloatingGrokButton() {
     <>
       <button 
         onClick={() => setIsOpen(!isOpen)} 
-        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-3xl z-50 transition-all active:scale-90 border-2 border-white/20"
+        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-3xl z-[999] transition-all active:scale-90 border-2 border-white/20"
         title="Context-aware Grok (your vault + current page)"
       >
         💬
       </button>
 
       {isOpen && (
-        <div className="fixed bottom-24 right-6 w-96 h-[560px] bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl z-[60] flex flex-col overflow-hidden">
+        <div className="fixed bottom-24 right-6 w-96 h-[560px] bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl z-[1000] flex flex-col overflow-hidden">
           <div className="p-4 border-b border-zinc-700 flex justify-between items-center bg-zinc-950">
             <div className="font-semibold flex items-center gap-2">
               💬 Grok <span className="text-xs text-blue-400">(with your Forge data)</span>

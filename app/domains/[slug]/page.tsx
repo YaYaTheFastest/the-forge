@@ -14,7 +14,7 @@ export default async function DomainPage({ params }: { params: Promise<{ slug: s
     extraData.fitness = await getFitnessSummary();
   } else if (slug === 'equipment') {
     const eq = await getAllShopEquipment();
-    extraData.equipmentNames = eq.slice(0, 5).map((e: any) => e.name);
+    extraData.equipmentNames = eq.slice(0, 20).map((e: any) => e.name);  // show more so 25 count matches visible items better
   }
 
   return (
