@@ -45,6 +45,8 @@ echo "Syncing updated files to droplet (including landing page bubbles)..."
 sshpass -p "$DROPLET_PASS" scp -o StrictHostKeyChecking=no -r app/forge root@161.35.97.99:/opt/the-mat/app/
 sshpass -p "$DROPLET_PASS" scp -o StrictHostKeyChecking=no -r app/domains root@161.35.97.99:/opt/the-mat/app/
 sshpass -p "$DROPLET_PASS" scp -o StrictHostKeyChecking=no app/page.tsx root@161.35.97.99:/opt/the-mat/app/page.tsx
+sshpass -p "$DROPLET_PASS" scp -o StrictHostKeyChecking=no app/layout.tsx root@161.35.97.99:/opt/the-mat/app/layout.tsx
+sshpass -p "$DROPLET_PASS" scp -o StrictHostKeyChecking=no app/globals.css root@161.35.97.99:/opt/the-mat/app/globals.css
 sshpass -p "$DROPLET_PASS" scp -o StrictHostKeyChecking=no app/components/FloatingGrokButton.tsx root@161.35.97.99:/opt/the-mat/app/components/
 sshpass -p "$DROPLET_PASS" scp -o StrictHostKeyChecking=no app/api/forge/grok-chat/route.ts root@161.35.97.99:/opt/the-mat/app/api/forge/grok-chat/route.ts
 sshpass -p "$DROPLET_PASS" scp -o StrictHostKeyChecking=no lib/vault.ts root@161.35.97.99:/opt/the-mat/lib/vault.ts

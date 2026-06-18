@@ -26,6 +26,7 @@ export default function RootLayout({
               <Link href="/techniques" className="hover:text-emerald-600 transition-colors">Techniques</Link>
               <Link href="/fitness" className="hover:text-emerald-600 transition-colors">Fitness</Link>
               <Link href="/forge" className="hover:text-emerald-600 transition-colors">Forge</Link>
+              <Link href="/domains" className="hover:text-emerald-600 transition-colors">Domains</Link>
               <Link href="/shop" className="hover:text-emerald-600 transition-colors">Shop</Link>
               <Link href="/status" className="hover:text-emerald-600 transition-colors">Status</Link>
             </nav>
