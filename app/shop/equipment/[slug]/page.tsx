@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
 import { MediaSection } from '@/app/components/media/MediaSection';
-import { HermesPromptClient } from '../HermesPromptClient';
+import { GrokEquipmentActions } from '../GrokEquipmentActions';
 import { HermesTriggerClient } from '../HermesTriggerClient';
 
 interface Props {
@@ -200,41 +200,8 @@ export default async function EquipmentProfilePage({ params }: Props) {
               </p>
             </div>
 
-            <div className="rounded-2xl border bg-muted/40 p-5 space-y-4">
-              <HermesPromptClient 
-                fullPrompt={`You are helping maintain Equipment Cards for ROCKIN’ J RANCH inside The Forge system (Equipment domain).
-
-Master context (attach this file):
-For Hermes - Equipment & Job Card System.md
-
-Current Equipment Card (paste the full markdown of this card below this line):
----
-[PASTE THE FULL EQUIPMENT CARD CONTENT HERE]
-
-Task:
-Deeply research and improve this Equipment Card while respecting the existing structure and the user's Personal Cues & Notes section.
-
-Follow the official 2026-05 template exactly. Distinguish Ranch Operations vs Household equipment where relevant.
-
-Priorities:
-- Fill or strengthen every section using the official template standards
-- Improve the maintenance schedule with specific, realistic intervals for this exact model (hours-based for Ranch items; cycle/seasonal for Household)
-- Add high-quality video or resource recommendations with clear "why valuable" notes
-- Strengthen Known Issues / Common Problems and Safety Critical with real-world ranch insights
-- Add or refine Cross-Domain notes (Fitness, BJJ mindset, Family values) if relevant
-- Suggest any high-value new Job Cards that should exist for this machine
-- For Household items (Litter-Robots, vacuums, fridges, etc.): focus on practical home use, cycle-based maintenance, and quality-of-life notes
-- For Ranch items: emphasize field-usable clarity for a tired operator at the end of a long day
-
-Output the full updated card in clean markdown, clearly marking changed or new sections. Also provide any recommended Job Card filenames and outlines.`}
-                quickPrompts={[
-                  "Review this equipment card and suggest 3-4 improvements to the maintenance schedule or safety sections.",
-                  "Recommend the best 2-3 YouTube videos or resources for pre-use inspection and common failures on this exact model. Include why each is valuable.",
-                  "Extract any Fitness or BJJ performance transfer value from operating or maintaining this piece of equipment.",
-                  "Suggest 3 high-quality photos or diagrams that would dramatically improve this Equipment Card (describe angle + what it should show).",
-                  "Help me write clear, field-usable Personal Cues for this machine that a tired operator at 7pm would actually follow.",
-                ]}
-              />
+            <div className="rounded-2xl border bg-muted/40 p-5">
+              <GrokEquipmentActions equipment={equipment} />
             </div>
           </section>
         </div>

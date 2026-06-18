@@ -464,6 +464,35 @@ export async function getDomainSummary(slug: string): Promise<{ name: string; co
   }
 }
 
+// Helper to list actual files for custom/new domains like "andres"
+export async function getDomainFiles(slug: string): Promise<Array<{name: string, file: string}>> {
+  const root = getVaultRoot();
+  const possible = [
+    `${root}/00 Meta/Systems/Domains/${slug}`,
+    `${root}/20 Knowledge Base/${slug}`,
+  ];
+  const files: Array<{name: string, file: string}> = [];
+  for (const p of possible) {
+    try {
+      const entries = await fs.readdir(p, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isFile() && entry.name.endsWith('.md')) {
+          const fullPath = path.join(p, entry.name);
+          try {
+            const raw = await fs.readFile(fullPath, 'utf8');
+            const { data } = matter(raw);
+            const name = data.name || data.title || entry.name.replace('.md', '');
+            files.push({ name: String(name), file: entry.name });
+          } catch (e) {
+            // skip bad files
+          }
+        }
+      }
+    } catch {}
+  }
+  return files.sort((a, b) => a.name.localeCompare(b.name));
+}
+
 // Convenience aggregator for Phase 1 home
 export const getFitnessSummary = cache(async function getFitnessSummary() {
   const [physiology, protocols, principles] = await Promise.all([

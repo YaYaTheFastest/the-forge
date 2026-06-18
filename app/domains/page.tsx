@@ -5,6 +5,7 @@ const domains = [
   { slug: 'fitness', name: 'Fitness & Recovery', desc: 'Physiology, protocols, mobility' },
   { slug: 'equipment', name: 'Equipment & Ranch', desc: 'Maintenance & Daily Wins' },
   { slug: 'insights', name: 'Cross-Domain Insights', desc: 'Hermes patterns & synthesis' },
+  { slug: 'andres', name: 'Andres', desc: 'Flexible space for any content & sharing' },
 ];
 
 export default function DomainsIndex() {

@@ -10,6 +10,8 @@ export default function DomainClient({ slug, title, initialSummary, extraData }:
     ? extraData.techniqueNames
     : extraData.equipmentNames 
     ? extraData.equipmentNames
+    : extraData.domainFiles 
+    ? extraData.domainFiles
     : ['Overview', 'Key Notes', 'Hermes Syntheses', 'Related Captures'];
 
   const filtered = sampleItems.filter((item: string) => 

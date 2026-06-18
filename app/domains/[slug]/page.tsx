@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getDomainSummary, getAllTechniques, getFitnessSummary, getAllShopEquipment } from '@/lib/vault';
+import { getDomainSummary, getAllTechniques, getFitnessSummary, getAllShopEquipment, getDomainFiles } from '@/lib/vault';
 import DomainClient from './DomainClient';
 
 export default async function DomainPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -15,6 +15,10 @@ export default async function DomainPage({ params }: { params: Promise<{ slug: s
   } else if (slug === 'equipment') {
     const eq = await getAllShopEquipment();
     extraData.equipmentNames = eq.slice(0, 20).map((e: any) => e.name);  // show more so 25 count matches visible items better
+  } else {
+    // Custom / new domains like "andres" - list real files from vault so created content is visible
+    const files = await getDomainFiles(slug);
+    extraData.domainFiles = files.map((f: any) => f.name);
   }
 
   return (

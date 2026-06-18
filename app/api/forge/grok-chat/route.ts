@@ -312,6 +312,42 @@ Return the full polished markdown for the main domain file(s).`;
       }
     }
 
+    // Create NEW content inside a custom domain (e.g. Andres) when chat is used from /domains/[slug]
+    // This makes "chat bubble clicked in the domain" create visible new files
+    if (context?.pageType === 'domain' && slug) {
+      const createIntent = intentMsg.includes('create') || intentMsg.includes('new') || intentMsg.includes('add') || intentMsg.includes('write') || intentMsg.includes('note') || intentMsg.includes('content') || intentMsg.includes('share');
+      if (createIntent) {
+        const dSlug = slug;
+        const dir = `/opt/vault/00 Meta/Systems/Domains/${dSlug.replace(/[^a-z0-9]/gi, '')}`;
+        await fs.mkdir(dir, { recursive: true });
+
+        // Extract a sensible title from the user message
+        const titleMatch = (message || rawForIntent).match(/(?:about|called|named|title|for|note on|content on)\s+["']?([A-Za-z0-9\s&\-]+)["']?/i);
+        let title = titleMatch ? titleMatch[1].trim() : 'New Note ' + Date.now();
+        const safeName = title.replace(/[^a-z0-9\s-]/gi, ' ').trim().replace(/\s+/g, '-').toLowerCase() || 'note';
+        const fileName = `${safeName}.md`;
+
+        const prompt = `Create high-quality, structured markdown content for the "${dSlug}" domain.
+User request: ${message}
+Start with a # ${title} heading.
+Use clear sections (e.g. Details, Ideas, Next Steps).
+Return ONLY the clean complete markdown. No extra text.`;
+
+        const result = await callHermesDeep(prompt);
+        if (result.success && result.output && result.output.length > 50) {
+          await fs.writeFile(`${dir}/${fileName}`, result.output, 'utf8');
+          return NextResponse.json({
+            success: true,
+            response: `✅ Created new content "${title}" inside the ${dSlug} domain.\n\nSaved as: ${fileName}\n\nRefresh /domains/${dSlug} to see it appear.`,
+          });
+        }
+        return NextResponse.json({
+          success: true,
+          response: `Tried to create content for ${dSlug} but Hermes returned limited output. Try a more specific request.`,
+        });
+      }
+    }
+
     // General search/list for queries from Telegram or non-page like "what guard passes do i have" or "list guard techniques"
     // This gives Telegram (and general chat) live vault context without being on a technique page.
     const isGuardQ = intentMsg.includes('guard');

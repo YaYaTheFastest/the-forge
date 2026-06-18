@@ -36,6 +36,14 @@ const domains = [
     color: 'violet',
     href: '/domains/insights',
   },
+  {
+    slug: 'andres',
+    name: 'Andres',
+    icon: '📓',
+    short: 'Flexible space for any content, notes, and future sharing.',
+    color: 'fuchsia',
+    href: '/domains/andres',
+  },
 ];
 
 export default function ForgeHomepage() {
@@ -51,7 +59,7 @@ export default function ForgeHomepage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12">
         {domains.map((d) => (
           <Link key={d.slug} href={d.href} className="group">
             <motion.div
@@ -63,6 +71,7 @@ export default function ForgeHomepage() {
                 ${d.color === 'blue' ? 'border-blue-500/30 hover:shadow-[0_0_40px_rgba(59,130,246,0.25)]' : ''}
                 ${d.color === 'amber' ? 'border-amber-500/30 hover:shadow-[0_0_40px_rgba(245,158,11,0.25)]' : ''}
                 ${d.color === 'violet' ? 'border-violet-500/30 hover:shadow-[0_0_40px_rgba(139,92,246,0.25)]' : ''}
+                ${d.color === 'fuchsia' ? 'border-fuchsia-500/30 hover:shadow-[0_0_40px_rgba(217,70,239,0.25)]' : ''}
               `}
             >
               <div className="text-6xl mb-3">{d.icon}</div>

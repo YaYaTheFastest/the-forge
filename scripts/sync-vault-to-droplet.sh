@@ -15,6 +15,20 @@ VAULT_SRC="/Users/darrenjorgenson/Obsidian/Jorgenson Brain/"
 DROPLET="root@161.35.97.99"
 DROPLET_VAULT="/opt/vault"
 
+# Load password from saved file (like deploy script) for password auth if no key
+if [ -z "$DROPLET_PASS" ]; then
+  PASS_FILE="$HOME/.config/the-mat/droplet.pass"
+  if [ -f "$PASS_FILE" ] && [ -r "$PASS_FILE" ]; then
+    DROPLET_PASS=$(cat "$PASS_FILE")
+    export DROPLET_PASS
+  fi
+fi
+
+RSYNC_SSH="ssh -o StrictHostKeyChecking=no"
+if [ -n "$DROPLET_PASS" ]; then
+  RSYNC_SSH="sshpass -p $DROPLET_PASS ssh -o StrictHostKeyChecking=no"
+fi
+
 PULL=false
 if [[ "$1" == "--pull" ]]; then
   PULL=true
@@ -23,6 +37,7 @@ fi
 if $PULL; then
   echo "Pulling vault FROM droplet -> local Mac (for Obsidian)..."
   rsync -avz --delete \
+    -e "$RSYNC_SSH" \
     --exclude='.git' \
     --exclude='.obsidian' \
     --exclude='*.bak' \
@@ -34,6 +49,7 @@ if $PULL; then
 else
   echo "Pushing local Mac vault -> droplet (for the live app)..."
   rsync -avz --delete \
+    -e "$RSYNC_SSH" \
     --exclude='.git' \
     --exclude='.obsidian' \
     --exclude='*.bak' \

@@ -211,11 +211,11 @@ export function GrokTechniqueActions({ technique }: GrokTechniqueActionsProps) {
     <div className="border-t pt-8">
       <div className="mb-4">
         <h2 className="text-lg font-semibold tracking-tight flex items-center gap-2">
-          Grok / Forge (direct to live vault)
+          Grok Actions
           <span className="text-xs font-normal px-2 py-0.5 rounded bg-blue-100 text-blue-700">Recommended</span>
         </h2>
         <p className="text-sm text-muted-foreground">
-          One-click polish, media, or analysis. Powered by the same Grok chat that works from Telegram and the floating 💬 button. Writes straight to /opt/vault.
+          One-click polish or analysis. Powered by Grok (delegates to Hermes for depth). Direct to vault.
         </p>
       </div>
 

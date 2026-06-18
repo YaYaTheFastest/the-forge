@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 
 export default function GrokChat() {
-  const [messages, setMessages] = useState([{ role: 'assistant', content: 'Hi Darren! I\'m Grok inside The Forge. Ask me anything about BJJ, equipment, or building the system. I can also trigger Hermes tasks directly.' }]);
+  const [messages, setMessages] = useState([{ role: 'assistant', content: 'Hi. On the Forge. What would you like to do?' }]);
   const [input, setInput] = useState('');
 
   const sendMessage = async () => {
@@ -24,10 +24,10 @@ export default function GrokChat() {
         </div>)}
       </div>
       <div className="flex gap-2">
-        <input value={input} onChange={e => setInput(e.target.value)} className="flex-1 p-3 rounded-lg border" placeholder="Ask Grok anything or say 'create best BJJ armbar card'" />
+        <input value={input} onChange={e => setInput(e.target.value)} className="flex-1 p-3 rounded-lg border" placeholder="Ask or tell me what to do..." />
         <button onClick={sendMessage} className="px-6 py-3 bg-blue-600 text-white rounded-lg">Send → Grok/Hermes</button>
       </div>
-      <p className="mt-4 text-sm text-zinc-400">This window is directly connected. I (Grok) can now edit the vault, trigger Hermes, deploy infrastructure, etc. from here.</p>
+      <p className="mt-4 text-sm text-zinc-400">Directly connected to your Forge data. Context from current page is used automatically.</p>
     </div>
   );
 }
