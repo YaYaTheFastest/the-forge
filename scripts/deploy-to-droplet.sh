@@ -17,6 +17,15 @@ if ! command -v sshpass >/dev/null 2>&1; then
 fi
 
 if [ -z "$DROPLET_PASS" ]; then
+  PASS_FILE="$HOME/.config/the-mat/droplet.pass"
+  if [ -f "$PASS_FILE" ] && [ -r "$PASS_FILE" ]; then
+    DROPLET_PASS=$(cat "$PASS_FILE")
+    export DROPLET_PASS
+    echo "Loaded droplet password from secure file."
+  fi
+fi
+
+if [ -z "$DROPLET_PASS" ]; then
   echo -n "Enter droplet root password (paste here - input hidden): "
   read -s DROPLET_PASS
   echo
