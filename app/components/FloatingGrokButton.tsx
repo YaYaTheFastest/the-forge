@@ -15,12 +15,7 @@ export default function FloatingGrokButton() {
   const [currentContext, setCurrentContext] = useState<{ slug?: string; name?: string; type: string }>({ type: 'general' });
 
   // Ref to always call the latest sendMessage (avoids stale closure from empty-deps effect)
-  const sendMessageRef = useRef(sendMessage);
-
-  // Keep ref updated
-  useEffect(() => {
-    sendMessageRef.current = sendMessage;
-  }, [sendMessage]);
+  const sendMessageRef = useRef<((msg?: string) => void) | null>(null);
 
   // Support pre-filling the chat (e.g. from + New Domain orb)
   useEffect(() => {
@@ -31,7 +26,7 @@ export default function FloatingGrokButton() {
         setInput(msg);
         // Auto-send the prefilled message for seamless experience (e.g. create domain)
         setTimeout(() => {
-          sendMessageRef.current(msg);
+          sendMessageRef.current?.(msg);
         }, 100);
       }
     };
@@ -168,6 +163,9 @@ export default function FloatingGrokButton() {
       setIsWriting(false);
     }
   };
+
+  // Sync-assign the latest sendMessage right after definition (ensures ref is populated even on first render)
+  sendMessageRef.current = sendMessage;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
