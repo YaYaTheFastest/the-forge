@@ -9,45 +9,87 @@ interface ChatMessage {
 
 export default function FloatingGrokButton() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { 
-      role: 'assistant', 
-      content: 'Hi Darren. I\'m connected to your Forge data.\n\nOn a technique page I can see the full card + your notes + the permanent 2026 GB1 golden standard.\n\nTry:\n• "Improve this card to full golden standard"\n• "Rewrite the personal cues to be more field-usable"\n• "What are the key principles here?"\n• "Add 3 good video suggestions and apply them"' 
-    }
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isWriting, setIsWriting] = useState(false);
-  const [currentContext, setCurrentContext] = useState<{ slug?: string; name?: string; isTechnique: boolean }>({ isTechnique: false });
+  const [currentContext, setCurrentContext] = useState<{ slug?: string; name?: string; type: string }>({ type: 'general' });
 
-  // Detect current page context (especially technique pages)
+  // Support pre-filling the chat (e.g. from + New Domain orb)
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      const msg = e.detail?.message;
+      if (msg) {
+        setIsOpen(true);
+        setInput(msg);
+        // Auto-send the prefilled message for seamless experience (e.g. create domain)
+        setTimeout(() => {
+          sendMessage(msg);
+        }, 100);
+      }
+    };
+    window.addEventListener('open-hermes-chat' as any, handler);
+    return () => window.removeEventListener('open-hermes-chat' as any, handler);
+  }, []);
+
+  // Detect current page context across the entire Forge (techniques, equipment, fitness, etc.)
   useEffect(() => {
     const updateContext = () => {
       const path = window.location.pathname;
-      const isTechnique = path.includes('/techniques/') && path !== '/techniques';
-      
-      if (isTechnique) {
-        // Try to extract slug and name from the page if possible
-        const slug = path.split('/techniques/')[1]?.split('?')[0];
-        // The page title or h1 usually has the technique name
-        const h1 = document.querySelector('h1')?.textContent?.trim();
-        
-        setCurrentContext({ 
-          slug: slug || undefined, 
-          name: h1 || undefined,
-          isTechnique: true 
-        });
-        
-        setMessages(prev => {
-          // Avoid duplicate context messages
-          if (prev.some(m => m.content.includes('Current technique context loaded'))) return prev;
-          return [...prev, { 
-            role: 'assistant', 
-            content: `Current technique context loaded: ${h1 || slug}\nI can now read the full card and your personal notes, and make real changes when you ask.` 
-          }];
-        });
+      let name: string | undefined;
+      let slug: string | undefined;
+      let type = 'general';
+
+      const h1 = document.querySelector('h1')?.textContent?.trim();
+
+      if (path.includes('/techniques/') && path !== '/techniques') {
+        slug = path.split('/techniques/')[1]?.split('?')[0];
+        name = h1 || slug;
+        type = 'technique';
+      } else if (path.includes('/shop/equipment/')) {
+        slug = path.split('/shop/equipment/')[1]?.split('?')[0];
+        name = h1 || slug;
+        type = 'equipment';
+      } else if (path.includes('/fitness/')) {
+        slug = path.split('/fitness/')[1]?.split('?')[0] || path.split('/fitness').pop() || undefined;
+        name = h1 || 'Fitness';
+        type = 'fitness';
+      } else if (path.includes('/shop')) {
+        name = h1 || 'Shop & Equipment';
+        type = 'shop';
+      } else if (path.includes('/domains/')) {
+        slug = path.split('/domains/')[1]?.split('?')[0] || undefined;
+        name = h1 || slug || 'Forge Domain';
+        type = 'domain';
+      } else if (path.includes('/forge')) {
+        name = h1 || 'Forge Domains';
+        type = 'forge';
       } else {
-        setCurrentContext({ isTechnique: false });
+        name = h1 || undefined;
+        type = 'general';
       }
+
+      const displayName = name || 'the Forge';
+
+      setCurrentContext({ 
+        slug: slug || undefined, 
+        name: displayName,
+        type 
+      });
+
+      // Set dynamic greeting with context on the page
+      const greeting = `Hi. On ${displayName}. What would you like to do?`;
+
+      setMessages(prev => {
+        // Set or replace initial greeting if first message or default
+        if (prev.length === 0 || prev[0].content.startsWith('Hi') || prev[0].content.includes('connected') || prev[0].content.includes('Forge data')) {
+          return [{ role: 'assistant', content: greeting }];
+        }
+        // If no greeting yet, prepend (for navigation)
+        if (!prev.some(m => m.content.startsWith('Hi. On'))) {
+          return [{ role: 'assistant', content: greeting }, ...prev];
+        }
+        return prev;
+      });
     };
 
     updateContext();
@@ -56,10 +98,11 @@ export default function FloatingGrokButton() {
     return () => clearInterval(interval);
   }, []);
 
-  const sendMessage = async () => {
-    if (!input.trim() || isWriting) return;
+  const sendMessage = async (overrideMessage?: string) => {
+    const messageToUse = overrideMessage || input;
+    if (!messageToUse.trim() || isWriting) return;
     
-    const userMessage = input.trim();
+    const userMessage = messageToUse.trim();
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setInput('');
     setIsWriting(true);
@@ -79,7 +122,7 @@ export default function FloatingGrokButton() {
             currentPath: window.location.pathname,
             currentSlug: currentContext.slug,
             currentName: currentContext.name,
-            isTechniquePage: currentContext.isTechnique,
+            pageType: currentContext.type,
           }
         })
       });
@@ -162,21 +205,21 @@ export default function FloatingGrokButton() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={currentContext.isTechnique ? "Improve this card..." : "Ask about your data..."} 
+                placeholder="Ask or tell me what to do..." 
                 className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
                 disabled={isWriting}
               />
               <button 
-                onClick={sendMessage} 
+                onClick={() => sendMessage()} 
                 disabled={isWriting || !input.trim()} 
                 className="bg-blue-600 hover:bg-blue-700 px-6 rounded-xl font-medium text-sm disabled:opacity-50"
               >
                 Send
               </button>
             </div>
-            {currentContext.isTechnique && (
+            {currentContext.name && (
               <div className="text-[10px] text-center text-zinc-500 mt-2">
-                Context: {currentContext.name || currentContext.slug} (full card loaded)
+                Context: {currentContext.name} ({currentContext.type})
               </div>
             )}
           </div>

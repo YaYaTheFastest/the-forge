@@ -430,6 +430,40 @@ export async function getFitnessPrinciples(): Promise<FitnessEntity[]> {
   return scanFitnessSubdir('Principles', 'principle');
 }
 
+// Simple extensible domain loader for the new Forge Domains system
+export async function getDomainSummary(slug: string): Promise<{ name: string; count: number; sample: string[] }> {
+  const root = getVaultRoot();
+  try {
+    if (slug === 'mat' || slug === 'bjj') {
+      const tech = await getAllTechniques();
+      return { name: 'The Mat (BJJ)', count: tech.length, sample: tech.slice(0, 3).map(t => t.name) };
+    }
+    if (slug === 'fitness') {
+      const f = await getFitnessSummary();
+      return { name: 'Fitness & Recovery', count: f.total || 0, sample: ['Physiology', 'Protocols', 'Mobility'] };
+    }
+    if (slug === 'equipment') {
+      const eq = await getAllShopEquipment();
+      return { name: 'Equipment & Ranch', count: eq.length, sample: eq.slice(0, 3).map(e => e.name) };
+    }
+    // For new or cross-domain, do a light fs scan
+    const possible = [
+      `${root}/00 Meta/Systems/Domains/${slug}`,
+      `${root}/20 Knowledge Base/${slug}`,
+    ];
+    let count = 0;
+    for (const p of possible) {
+      try {
+        const files = await fs.readdir(p);
+        count += files.filter(f => f.endsWith('.md')).length;
+      } catch {}
+    }
+    return { name: slug.charAt(0).toUpperCase() + slug.slice(1), count, sample: ['See vault for live files'] };
+  } catch {
+    return { name: slug, count: 0, sample: [] };
+  }
+}
+
 // Convenience aggregator for Phase 1 home
 export const getFitnessSummary = cache(async function getFitnessSummary() {
   const [physiology, protocols, principles] = await Promise.all([

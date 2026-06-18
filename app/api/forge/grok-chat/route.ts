@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { getTechniqueBySlug, getAllTechniques, updatePersonalNotes, createHermesTechniquePolishTask, applyMediaSuggestions, applyPolishedTechniqueCard, getShopEquipmentBySlug } from '@/lib/vault';
+import { getTechniqueBySlug, getAllTechniques, updatePersonalNotes, createHermesTechniquePolishTask, applyMediaSuggestions, applyPolishedTechniqueCard, getShopEquipmentBySlug, getAllShopEquipment, createHermesEquipmentReviewTask } from '@/lib/vault';
 
 const execAsync = promisify(exec);
 
@@ -248,6 +248,70 @@ The updates I can do will write directly to the server's vault copy (live on the
       }
     }
 
+    // === DOMAIN CREATION / POLISH (new Forge Domains feature) ===
+    if (intentMsg.includes('create new domain') || intentMsg.includes('new domain') || intentMsg.includes('create domain')) {
+      // Extract desired name
+      const nameMatch = (message || rawForIntent).match(/(?:domain|called|for|named)\s+["']?([A-Za-z0-9\s&\-]+)["']?/i);
+      const domainName = (nameMatch ? nameMatch[1] : 'New Domain').trim();
+      const domainSlug = domainName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+      const prompt = `You are helping build The Forge domains system.
+Search the user's Obsidian vault for any existing notes, files, or captures related to "${domainName}" (look in 00 Meta, 20 Knowledge Base, or anywhere relevant).
+Categorize what you find.
+Create a clean, high-quality standardized domain hub using this template:
+
+# ${domainName}
+
+## Purpose
+(One paragraph)
+
+## Key Content from Vault
+- List relevant existing files/cards with short summaries and links if possible.
+
+## Initial Structure Recommendations
+- Suggested folder under 00 Meta/Systems/Domains/${domainName.replace(/\s/g,'')} or 20 Knowledge Base
+
+## Hermes Suggestions
+- First actions to polish or generate cards.
+
+Return ONLY clean markdown for the domain Overview.md file. Highest quality, actionable, vault-grounded.`;
+
+      const result = await callHermesDeep(prompt);
+      if (result.success && result.output) {
+        const dir = `/opt/vault/00 Meta/Systems/Domains/${domainName.replace(/[^a-z0-9]/gi, '')}`;
+        await fs.mkdir(dir, { recursive: true });
+        await fs.writeFile(`${dir}/Overview.md`, result.output, 'utf8');
+
+        return NextResponse.json({
+          success: true,
+          response: `✅ Created new domain "${domainName}" with initial standardized content pulled from your vault.\n\nFile written to: 00 Meta/Systems/Domains/.../Overview.md\n\nOpen /domains/${domainSlug} or /forge to see it. Say "polish ${domainName}" to refine further.`,
+          canApply: true,
+        });
+      }
+      return NextResponse.json({ success: true, response: 'Hermes had trouble generating the domain. Try again or be more specific.' });
+    }
+
+    if (intentMsg.includes('polish') && (intentMsg.includes('domain') || context?.pageType === 'domain')) {
+      const dName = itemName || 'the current domain';
+      const prompt = `Search the vault for all content related to the ${dName} domain (files, notes, cards).
+Standardize and polish everything to the highest 2026 Forge quality template (rich structure, clear purpose, actionable sections, cross-references).
+Generate improved versions of key files.
+Return the full polished markdown for the main domain file(s).`;
+
+      const result = await callHermesDeep(prompt);
+      if (result.success) {
+        // For simplicity we write a polished overview; in real use we could parse multiple files
+        const dir = `/opt/vault/00 Meta/Systems/Domains/${(dName as string).replace(/[^a-z0-9]/gi, '')}`;
+        await fs.mkdir(dir, { recursive: true });
+        await fs.writeFile(`${dir}/Polished-Overview.md`, result.output, 'utf8');
+
+        return NextResponse.json({
+          success: true,
+          response: `✅ Polished ${dName} domain content using Hermes + your vault.\n\nWrote Polished-Overview.md. Refresh the domain page.`,
+        });
+      }
+    }
+
     // General search/list for queries from Telegram or non-page like "what guard passes do i have" or "list guard techniques"
     // This gives Telegram (and general chat) live vault context without being on a technique page.
     const isGuardQ = intentMsg.includes('guard');
@@ -367,6 +431,9 @@ The updates I can do will write directly to the server's vault copy (live on the
     if (!item) {
       return NextResponse.json({ success: false, response: 'Could not load the current item from the vault.' });
     }
+
+    const technique = itemType === 'technique' ? item : null;
+    const equipment = itemType === 'equipment' ? item : null;
 
     // Direct update instructions (zero further interaction)
     const isGolden = intentMsg.includes('polish') || intentMsg.includes('golden') || intentMsg.includes('improve') || intentMsg.includes('standard');
@@ -547,15 +614,19 @@ Return ONLY the complete clean markdown (with frontmatter if appropriate). No ex
     }
 
     if (intentMsg.includes('apply') && (intentMsg.includes('note') || intentMsg.includes('cue'))) {
-      const improved = generateQuickGoldenNotes(technique);
-      const wrote = await updatePersonalNotes(slug, improved);
-      return NextResponse.json({
-        success: true,
-        response: wrote
-          ? `✅ Applied improved personal cues directly to the live vault for **${itemName}**.\nRefresh to see the changes.`
-          : `Generated improved notes but write to vault failed. Here they are for manual copy:\n\n${improved}`,
-        changesApplied: wrote
-      });
+      if (technique) {
+        const improved = generateQuickGoldenNotes(technique);
+        const wrote = await updatePersonalNotes(slug, improved);
+        return NextResponse.json({
+          success: true,
+          response: wrote
+            ? `✅ Applied improved personal cues directly to the live vault for **${itemName}**.\nRefresh to see the changes.`
+            : `Generated improved notes but write to vault failed. Here they are for manual copy:\n\n${improved}`,
+          changesApplied: wrote
+        });
+      } else {
+        return NextResponse.json({ success: true, response: 'Cues apply only supported for technique cards currently.' });
+      }
     }
 
     // Default: answer using real vault context and permanent instructions.
