@@ -5,8 +5,8 @@
 #
 # Uses full brain prefs: ADHD simple, visuals, anticipation, RACI, hybrid.
 
-PROJECT_DIR="/opt/the-mat"  # Adjust for Mac: /Users/darrenjorgenson/Projects/the-mat
-VAULT_DIR="/opt/vault"      # Or local Obsidian path
+PROJECT_DIR="${PROJECT_DIR:-/Users/darrenjorgenson/Projects/the-mat}"  # Default for Mac; set for droplet
+VAULT_DIR="${VAULT_DIR:-/opt/vault}"      # Or local Obsidian path
 
 cd "$PROJECT_DIR" || exit 1
 
