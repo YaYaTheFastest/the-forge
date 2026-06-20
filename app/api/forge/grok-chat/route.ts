@@ -290,7 +290,8 @@ Current card: ${eq.content}. Return the full polished markdown + frontmatter.`;
       if (intentMsg.includes('--focus bjj')) focus = 'bjj';
       else if (intentMsg.includes('--focus equipment')) focus = 'equipment';
       else if (intentMsg.includes('--focus fitness')) focus = 'fitness';
-      const result = await runFullOptimizeCycle({ dryRun, focus });
+      const deep = intentMsg.includes('--deep');
+      const result = await runFullOptimizeCycle({ dryRun, focus, deep });
       return NextResponse.json({
         success: result.success,
         response: result.report || 'Autonomous optimize cycle completed. Check Forge Content Update Log.md for details.',

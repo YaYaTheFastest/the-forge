@@ -63,7 +63,7 @@ export default async function ForgeHomepage() {
           }}
           className="mt-4 px-6 py-2 rounded-full bg-emerald-600 text-white text-sm hover:bg-emerald-700 transition"
         >
-          Autonomous Optimize (zero-input, full cycle)
+          Autonomous Optimize ( --deep for Hermes, --dry-run)
         </button>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
           Your vault, organized as beautiful, actionable hubs. Everything is live.
