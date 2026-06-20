@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 
 export default function DomainClient({ slug, title, initialSummary, extraData }: any) {
@@ -12,11 +13,14 @@ export default function DomainClient({ slug, title, initialSummary, extraData }:
     ? extraData.equipmentNames
     : extraData.domainFiles 
     ? extraData.domainFiles
-    : ['Overview', 'Key Notes', 'Hermes Syntheses', 'Related Captures'];
+    : (initialSummary && initialSummary.sample && initialSummary.sample.length > 0)
+      ? initialSummary.sample
+      : ['Overview', 'Key Notes', 'Hermes Syntheses', 'Related Captures'];
 
-  const filtered = sampleItems.filter((item: string) => 
-    item.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = sampleItems.filter((item: any) => {
+    const name = typeof item === 'string' ? item : item.name;
+    return name.toLowerCase().includes(search.toLowerCase());
+  });
 
   const handlePolish = () => {
     const evt = new CustomEvent('open-hermes-chat', {
@@ -41,12 +45,22 @@ export default function DomainClient({ slug, title, initialSummary, extraData }:
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {filtered.length > 0 ? (
-          filtered.map((item: string, i: number) => (
-            <div key={i} className="p-5 border rounded-2xl bg-card hover:border-emerald-500/50 transition-colors">
-              <div className="font-medium">{item}</div>
-              <div className="text-xs text-muted-foreground mt-1">Pulled live from vault • {title}</div>
-            </div>
-          ))
+          filtered.map((item: any, i: number) => {
+            const name = typeof item === 'string' ? item : (item.name || item);
+            const file = typeof item === 'object' ? (item.file || name.replace(/\s+/g, '-')) : name.replace(/\s+/g, '-');
+            const hasContent = typeof item === 'object' && !!item.content;
+            return (
+              <Link 
+                key={i} 
+                href={`/domains/${slug}/${encodeURIComponent(file)}`}
+                className={`p-5 border rounded-2xl bg-card hover:border-emerald-500/50 transition-colors block ${hasContent ? 'cursor-pointer hover:shadow-md active:scale-[0.99]' : ''}`}
+              >
+                <div className="font-medium">{name}</div>
+                <div className="text-xs text-muted-foreground mt-1">Pulled live from vault • {title}</div>
+                {hasContent && <div className="text-[10px] text-emerald-600 mt-1">Click to open full page</div>}
+              </Link>
+            );
+          })
         ) : (
           <div className="text-sm text-muted-foreground col-span-full">No matches. The full content lives in your Obsidian vault.</div>
         )}

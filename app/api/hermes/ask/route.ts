@@ -46,7 +46,7 @@ ${body.prompt}
 
     // For now, we construct what we would send to Hermes.
     // In a more advanced version we will actually call the Hermes CLI.
-    let fullPrompt = `You are an expert BJJ coach and principle extractor working inside the user's personal "The Mat" system.
+    let fullPrompt = `${body.prompt.toLowerCase().includes('research') || body.prompt.toLowerCase().includes('search web') || body.prompt.toLowerCase().includes('browse page') ? 'Use internet research tools (web_search, open_page, etc.). Research the topic thoroughly. Synthesize with vault data if available. ' : ''}You are an expert BJJ coach and principle extractor working inside the user's personal "The Mat" system.
 
 You have access to the user's Obsidian vault containing their technique library.
 

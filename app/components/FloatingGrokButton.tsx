@@ -52,6 +52,13 @@ export default function FloatingGrokButton() {
         slug = path.split('/shop/equipment/')[1]?.split('?')[0];
         name = h1 || slug;
         type = 'equipment';
+      } else if (path.includes('/domains/')) {
+        const after = path.split('/domains/')[1]?.split('?')[0] || '';
+        const parts = after.split('/').filter(Boolean);
+        slug = parts[0] || undefined;
+        const itm = parts[1] ? decodeURIComponent(parts[1]) : undefined;
+        name = h1 || (itm ? itm.replace(/[-_.]/g, ' ').replace(/\.md$/i, '') : slug) || 'Forge Domain';
+        type = itm ? 'domain-item' : 'domain';
       } else if (path.includes('/fitness/')) {
         slug = path.split('/fitness/')[1]?.split('?')[0] || path.split('/fitness').pop() || undefined;
         name = h1 || 'Fitness';
@@ -59,10 +66,6 @@ export default function FloatingGrokButton() {
       } else if (path.includes('/shop')) {
         name = h1 || 'Shop & Equipment';
         type = 'shop';
-      } else if (path.includes('/domains/')) {
-        slug = path.split('/domains/')[1]?.split('?')[0] || undefined;
-        name = h1 || slug || 'Forge Domain';
-        type = 'domain';
       } else if (path.includes('/forge')) {
         name = h1 || 'Forge Domains';
         type = 'forge';
@@ -79,10 +82,16 @@ export default function FloatingGrokButton() {
         type 
       });
 
-      // Set dynamic greeting with context on the page
-      const greeting = `Hi. On ${displayName}. What would you like to do?`;
+      // Set dynamic greeting with context on the page - don't interfere with active chats
+      let greeting = `Hi. On ${displayName}. What would you like to do?`;
+      if (type === 'domain' || type === 'domain-item') {
+        greeting += ' You can say "suggest new domains based on my vault content" to have Hermes propose new ones for the bottom of the domains page.';
+      }
 
       setMessages(prev => {
+        const hasUserMessages = prev.some(m => m.role === 'user');
+        if (hasUserMessages) return prev;
+
         // Set or replace initial greeting if first message or default
         if (prev.length === 0 || prev[0].content.startsWith('Hi') || prev[0].content.includes('connected') || prev[0].content.includes('Forge data')) {
           return [{ role: 'assistant', content: greeting }];
@@ -101,7 +110,59 @@ export default function FloatingGrokButton() {
     return () => clearInterval(interval);
   }, []);
 
+  const getFreshContext = () => {
+    const path = window.location.pathname;
+    let name: string | undefined;
+    let s: string | undefined;
+    let t = 'general';
+    let domainItem: string | undefined = undefined;
+
+    const h1 = document.querySelector('h1')?.textContent?.trim();
+
+    if (path.includes('/techniques/') && path !== '/techniques') {
+      s = path.split('/techniques/')[1]?.split('?')[0];
+      name = h1 || s;
+      t = 'technique';
+    } else if (path.includes('/shop/equipment/')) {
+      s = path.split('/shop/equipment/')[1]?.split('?')[0];
+      name = h1 || s;
+      t = 'equipment';
+    } else if (path.includes('/domains/')) {
+      const afterDomains = path.split('/domains/')[1]?.split('?')[0] || '';
+      const parts = afterDomains.split('/').filter(Boolean);
+      s = parts[0] || undefined;  // domain slug e.g. 'andres'
+      domainItem = parts[1] ? decodeURIComponent(parts[1]) : undefined; // e.g. 'mountain-snowboarding.md' or the decoded item
+      name = h1 || (domainItem ? domainItem.replace(/[-_]/g, ' ').replace(/\.md$/i,'') : s) || 'Forge Domain';
+      t = domainItem ? 'domain-item' : 'domain';
+    } else if (path.includes('/fitness/')) {
+      s = path.split('/fitness/')[1]?.split('?')[0] || path.split('/fitness').pop() || undefined;
+      name = h1 || 'Fitness';
+      t = 'fitness';
+    } else if (path.includes('/shop')) {
+      name = h1 || 'Shop & Equipment';
+      t = 'shop';
+    } else if (path.includes('/forge')) {
+      name = h1 || 'Forge Domains';
+      t = 'forge';
+    } else {
+      name = h1 || undefined;
+      t = 'general';
+    }
+
+    const ret: any = {
+      slug: s || undefined,
+      name: name || 'the Forge',
+      type: t
+    };
+    if (domainItem) ret.currentItem = domainItem;
+    return ret;
+  };
+
   const sendMessage = async (overrideMessage?: string) => {
+    const freshContext = getFreshContext();
+    // update state for UI but use fresh for the API call
+    setCurrentContext(freshContext);
+
     const messageToUse = overrideMessage || input;
     if (!messageToUse.trim() || isWriting) return;
     
@@ -117,18 +178,25 @@ export default function FloatingGrokButton() {
       // Call our new context-aware Grok chat API
       const res = await fetch('/api/forge/grok-chat', {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
           context: {
             currentPath: window.location.pathname,
-            currentSlug: currentContext.slug,
-            currentName: currentContext.name,
-            pageType: currentContext.type,
+            currentSlug: freshContext.slug,
+            currentName: freshContext.name,
+            pageType: freshContext.type,
+            currentItem: freshContext.currentItem,
+            supportsResearch: true, // Enable Grok web tools for research requests
+            domainContext: freshContext.type && freshContext.type.includes('domain') ? freshContext.slug : null,
           }
         })
       });
+
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => '');
+        throw new Error(`Backend error ${res.status}: ${errorText.slice(0,200)}`);
+      }
 
       const data = await res.json();
 
@@ -152,11 +220,22 @@ export default function FloatingGrokButton() {
       }
 
     } catch (error) {
+      console.error('Chat fetch error:', error);
+      let content = 'Error reaching the backend. Please check your connection or try again in a moment.';
+      if (error instanceof Error) {
+        if (error.message.includes('Backend error 401')) {
+          content = 'Authentication error. Please refresh the page and enter your credentials again if prompted.';
+        } else if (error.message.includes('Backend error')) {
+          content = `Backend error: ${error.message}`;
+        } else {
+          content = `Error reaching the backend: ${error.message}`;
+        }
+      }
       setMessages(prev => {
         const withoutThinking = prev.slice(0, -1);
         return [...withoutThinking, { 
           role: 'assistant', 
-          content: 'Error reaching the backend. Make sure the dev server is running.' 
+          content 
         }];
       });
     } finally {

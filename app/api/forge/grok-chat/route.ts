@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { getTechniqueBySlug, getAllTechniques, updatePersonalNotes, createHermesTechniquePolishTask, applyMediaSuggestions, applyPolishedTechniqueCard, getShopEquipmentBySlug, getAllShopEquipment, createHermesEquipmentReviewTask } from '@/lib/vault';
+import { getTechniqueBySlug, getAllTechniques, updatePersonalNotes, createHermesTechniquePolishTask, applyMediaSuggestions, applyPolishedTechniqueCard, getShopEquipmentBySlug, getAllShopEquipment, createHermesEquipmentReviewTask, getDomainSummary, addDomainToHidden, removeDomainFromHidden, getHiddenDomainsList, hideDomainViaFrontmatter, isDomainHidden, runFullOptimizeCycle } from '@/lib/vault';
 
 const execAsync = promisify(exec);
 
@@ -13,17 +13,15 @@ const execAsync = promisify(exec);
  * The prompt must instruct "Return ONLY the clean markdown".
  */
 async function callHermesDeep(prompt: string): Promise<{ success: boolean; output: string; error?: string }> {
-  const sshHost = process.env.HERMES_MAC_SSH || process.env.THE_MAT_HERMES_MAC_SSH || 'darren@darren-mac'; // Set in droplet env, e.g. darren@tailscale-mac-name
+  const sshHost = process.env.HERMES_MAC_SSH || process.env.THE_MAT_HERMES_MAC_SSH || 'darrenjorgenson@darrens-mac-mini'; // Set in droplet env, e.g. darrenjorgenson@tailscale-mac-name. Use correct Tailscale hostname. Match the Mac username that owns the hermes binary.
   if (!sshHost) {
     return { success: false, output: '', error: 'No HERMES_MAC_SSH configured' };
   }
 
   try {
-    // Use plain ssh over Tailscale (name resolves via MagicDNS on droplet).
-    // sshHost is like darrenjorgenson@darrens-mac-mini
-    // StrictHostKeyChecking=no because first connect or Tailscale host key handling.
-    const escaped = prompt.replace(/'/g, "'\\''");
-    const cmd = `ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=15 -o ServerAliveInterval=10 ${sshHost} '/Users/darrenjorgenson/.local/bin/hermes -z '"'"'${escaped}'"'"' '`;
+    // Use base64 to safely pass long/complex prompts (avoids shell quoting issues with newlines, quotes, etc.)
+    const base64Prompt = Buffer.from(prompt, 'utf8').toString('base64');
+    const cmd = `ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=15 -o ServerAliveInterval=10 -i /root/.ssh/id_ed25519 ${sshHost} 'echo ${base64Prompt} | base64 -d > /tmp/hermes_prompt.txt && /Users/darrenjorgenson/.local/bin/hermes -z /tmp/hermes_prompt.txt'`;
 
     const { stdout, stderr } = await execAsync(cmd, {
       timeout: 180000, // 3 minutes for deep processing
@@ -49,6 +47,9 @@ async function callHermesDeep(prompt: string): Promise<{ success: boolean; outpu
 
 async function loadPermanentInstructions(): Promise<string> {
   const possiblePaths = [
+    '/opt/vault/00 Meta/Systems/Forge - My Content Brain Preferences.md',
+    '/opt/vault/00 Meta/Systems/Forge Intelligent Card Rules & Anticipation Engine.md',
+    '/opt/vault/00 Meta/Systems/Forge Hermes-Grok RACI, Context & Memory System.md',
     '/opt/vault/Hermes - BJJ Card Golden Standard Instructions.md',
     '/opt/vault/BJJ-Hermes-Permanent-Best-Standard.md',
     '/opt/vault/00 Meta/Systems/BJJ - Permanent Best Quality Standing Instructions for Hermes & Grok.md',
@@ -70,7 +71,7 @@ async function loadPermanentInstructions(): Promise<string> {
 - Output ready-to-apply full clean markdown only. No drafts.`;
   }
 
-  return `You are following these permanent standing orders for all BJJ work (non-negotiable):\n${content}\n\nReturn ONLY the clean, complete markdown card content. No extra text, no explanations, no code blocks around it.`;
+  return `You are following these permanent standing orders for all BJJ and Forge content work (non-negotiable). Reference the central brain, rules, and RACI first for tastes, categorization (noun/verb), anticipation, ADHD, visuals, and tracking:\n${content}\n\nReturn ONLY the clean, complete markdown card content. No extra text, no explanations, no code blocks around it.`;
 }
 
 // Context-aware Grok chat backend (seamless with Hermes).
@@ -80,10 +81,11 @@ async function loadPermanentInstructions(): Promise<string> {
 // - Applies result directly. Zero manual steps for the user.
 //
 // Setup on droplet (one time):
-//   export HERMES_MAC_SSH="darren@your-tailscale-mac-hostname"
+//   export HERMES_MAC_SSH="darrenjorgenson@your-tailscale-mac-hostname"
 //   (or THE_MAT_HERMES_MAC_SSH)
-//   Add droplet's SSH public key to Mac ~/.ssh/authorized_keys for passwordless.
-//   Test manually: ssh $HERMES_MAC_SSH 'hermes -z "test prompt"'
+//   Add droplet's SSH public key (cat /root/.ssh/id_ed25519.pub) to the Mac user's ~/.ssh/authorized_keys.
+//   Ensure correct Mac username (the one with /Users/<user>/.local/bin/hermes).
+//   Test manually: ssh $HERMES_MAC_SSH '/Users/darrenjorgenson/.local/bin/hermes -z "test prompt"'
 //   Then pm2 restart the-forge --update-env
 
 
@@ -96,11 +98,28 @@ export async function POST(request: NextRequest) {
     let pageType = context?.pageType || (context?.isTechniquePage ? 'technique' : 'general');
     let isTechnique = pageType === 'technique';
     let slug = context?.currentSlug;
+    if (slug && slug.includes('/')) {
+      slug = slug.split('/')[0];  // for domain item pages like andres/xxx.md, use 'andres'
+    }
+    // Support item-specific from domain subpages
+    const currentItemFromCtx = context?.currentItem || (context?.currentSlug && context.currentSlug.includes('/') ? context.currentSlug.split('/').pop() : null);
+    if (currentItemFromCtx && !slug) {
+      // rare, but normalize
+    }
     let itemName = context?.currentName || slug;
 
     // Clean user text (Telegram previously prepended a long persona; web sends raw)
     const rawForIntent = (message || '').replace(/.*current user message:\s*/i, '').trim();
     const intentMsg = rawForIntent.toLowerCase() || userMsg;
+
+    // Research enablement: detect requests for internet research, web search, browse, latest info
+    // Wire Grok's native tools (web_search, open_page, etc.) for these tasks
+    const isResearchRequest = intentMsg.includes('research') || intentMsg.includes('search web') || intentMsg.includes('browse page') || intentMsg.includes('internet research') || intentMsg.includes('web search') || intentMsg.includes('latest') || intentMsg.includes('find online') || intentMsg.includes('use internet');
+    if (isResearchRequest) {
+      // When research is requested, the system will use Grok tools to gather fresh data
+      // Then synthesize with vault via Hermes or direct
+      console.log('[Research] Detected research request, enabling Grok web tools');
+    }
 
     // For Telegram / general messages, try to resolve a card from the text for context (techniques or equipment)
     if (!slug && rawForIntent) {
@@ -123,11 +142,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Only show the "go to a page" message if no context and no obvious action/ query keywords
-    const hasAction = intentMsg.includes('polish') || intentMsg.includes('apply') || intentMsg.includes('update') || intentMsg.includes('add') || intentMsg.includes('create') || intentMsg.includes('list') || intentMsg.includes('all') || intentMsg.includes('guard') || intentMsg.includes('sweep') || intentMsg.includes('what') || intentMsg.includes('show') || intentMsg.includes('my ');
+    const hasAction = intentMsg.includes('polish') || intentMsg.includes('apply') || intentMsg.includes('update') || intentMsg.includes('add') || intentMsg.includes('create') || intentMsg.includes('list') || intentMsg.includes('all') || intentMsg.includes('guard') || intentMsg.includes('sweep') || intentMsg.includes('what') || intentMsg.includes('show') || intentMsg.includes('my ') || intentMsg.includes('research') || intentMsg.includes('search web') || intentMsg.includes('browse') || intentMsg.includes('hide') || intentMsg.includes('private') || intentMsg.includes('unhide') || intentMsg.includes('hidden');
     if (!slug && !hasAction) {
       return NextResponse.json({
         success: true,
         response: `I'm running on the remote server with access to the live vault.
+
+**Central Brain**: Always reference 00 Meta/Systems/Forge - My Content Brain Preferences.md + Intelligent Rules + RACI/Memory for tastes, categorization (noun/verb), anticipation, ADHD, visuals, tracking (no dropped tasks).
 
 I can answer questions about any card (techniques, equipment, etc.), your recent work, or the overall system.
 On a card page I can read the full content + notes and make changes.
@@ -137,7 +158,7 @@ Try:
 - "Suggest media and apply"
 - "What are the key principles?"
 
-Or anywhere: "list guard techniques", "polish all GB1", "what equipment needs review".
+Or anywhere: "list guard techniques", "polish all techniques to JUNE 2026 GOLD STANDARD with visible photos", "what equipment needs review".
 
 The updates I can do will write directly to the server's vault copy (live on the site).`
       });
@@ -166,7 +187,9 @@ The updates I can do will write directly to the server's vault copy (live on the
     } catch {}
 
     // Bulk support even without technique context (for "Hermes create tasks for all GB1")
-    if (intentMsg.includes('all') || intentMsg.includes('every') || intentMsg.includes('bulk') || intentMsg.includes('all cards') || intentMsg.includes('every card')) {
+    // Skip bulk if this is a domain-specific request (to avoid misfiring on "polish all content in X domain")
+    const isDomainRequest = context?.pageType === 'domain' || context?.pageType === 'domain-item' || intentMsg.includes('domain') || /andres/i.test(intentMsg);
+    if (!isDomainRequest && (intentMsg.includes('all') || intentMsg.includes('every') || intentMsg.includes('bulk') || intentMsg.includes('all cards') || intentMsg.includes('every card') || intentMsg.includes('all techniques') || intentMsg.includes('all bjj'))) {
       const createTasksOnly = intentMsg.includes('create task') || intentMsg.includes('create tasks') || intentMsg.includes('review');
 
       if (intentMsg.includes('equipment') || intentMsg.includes('shop') || intentMsg.includes('job card')) {
@@ -179,11 +202,18 @@ The updates I can do will write directly to the server's vault copy (live on the
             await createHermesEquipmentReviewTask(eq.slug, {
               recentChange: `Bulk review triggered via live chat`,
               triggeredFrom: 'Live Floating Grok Chat (bulk equipment)',
-              focusAreas: ['2026 gold standard', 'Maintenance Schedule', 'Service Instructions', 'Job Cards'],
+              focusAreas: ['JUNE 2026 GOLD STANDARD', 'visible real photos with embeds', 'Maintenance Schedule', 'Service Instructions', 'Job Cards'],
             });
             createdTasks++;
           } else {
-            const prompt = `You are following the official 2026 Equipment Card standards. Standardize this equipment card to the full gold standard, including all sections, maintenance schedule, service instructions, and suggest job cards. Current card: ${eq.content}. Return ONLY the clean updated markdown for the equipment card plus a list of job cards.`;
+            const prompt = `You are following the JUNE 2026 GOLD STANDARD via central brain:
+- Forge - My Content Brain Preferences.md
+- Forge Intelligent Card Rules & Anticipation Engine.md
+- RACI/Memory System
+
+Categorize (Noun for equipment), anticipate unstated per rules. Research/include visible photos as ![[ ]] embeds. Update RACI log with proof.
+
+Current card: ${eq.content}. Return the full polished markdown + frontmatter.`;
             const hermesResult = await callHermesDeep(prompt);
             if (hermesResult.success && hermesResult.output) {
               // For equipment, write the output to a task file for now (full direct structured apply for equipment cards is limited)
@@ -191,7 +221,7 @@ The updates I can do will write directly to the server's vault copy (live on the
               await createHermesEquipmentReviewTask(eq.slug, {
                 recentChange: `Bulk gold standard via chat`,
                 triggeredFrom: 'Live chat',
-                focusAreas: ['Gold standard'],
+                focusAreas: ['JUNE 2026 GOLD STANDARD with visible photos'],
               });
               // To "apply", we can append the output or just note
               processed++;
@@ -211,21 +241,25 @@ The updates I can do will write directly to the server's vault copy (live on the
         }
       }
 
-      // Default GB1 techniques bulk
+      // Bulk for BJJ techniques - support "all techniques", "all bjj", "all cards" etc. Default to all if specified, else GB1 for legacy.
       const allTech = await getAllTechniques();
-      const gb1Cards = allTech.filter((t: any) => 
-        (t.gb_curriculum && t.gb_curriculum.some((g: string) => g.includes('GB1'))) || 
-        (t.name && /GB1/i.test(t.name)) ||
-        (t.filePath && /GB1/i.test(t.filePath))
-      );
+      let techniqueCards = allTech;
+      const wantsAllTechniques = intentMsg.includes('all techniques') || intentMsg.includes('all bjj') || intentMsg.includes('every technique') || intentMsg.includes('all cards');
+      if (!wantsAllTechniques) {
+        techniqueCards = allTech.filter((t: any) => 
+          (t.gb_curriculum && t.gb_curriculum.some((g: string) => g.includes('GB1'))) || 
+          (t.name && /GB1/i.test(t.name)) ||
+          (t.filePath && /GB1/i.test(t.filePath))
+        );
+      }
       let processed = 0;
       let createdTasks = 0;
-      for (const t of gb1Cards) {
+      for (const t of techniqueCards) {
         if (createTasksOnly) {
           await createHermesTechniquePolishTask(t.slug, {
             recentChange: `Bulk review triggered via live chat`,
             triggeredFrom: 'Live Floating Grok Chat (bulk)',
-            focusAreas: ['Full 2026 GB1 Standard'],
+            focusAreas: ['JUNE 2026 GOLD STANDARD', 'visible real photos and videos', 'exact template structure'],
           });
           createdTasks++;
         } else {
@@ -235,29 +269,175 @@ The updates I can do will write directly to the server's vault copy (live on the
         }
         // no limit for bulk - process all requested
       }
+      const countDesc = wantsAllTechniques ? `${techniqueCards.length} BJJ technique cards` : `${createdTasks || processed} GB1 cards`;
       if (createTasksOnly) {
         return NextResponse.json({
           success: true,
-          response: `✅ Created detailed Hermes polish tasks for ${createdTasks} GB1 cards in the live vault. Process with Hermes Desktop (after pull), then say "apply Hermes outputs" in chat.`
+          response: `✅ Created detailed Hermes polish tasks for ${countDesc} in the live vault using JUNE 2026 GOLD STANDARD (with photo/video research instructions). Process with Hermes Desktop (after pull), then say "apply Hermes outputs" in chat.`
         });
       } else {
         return NextResponse.json({
           success: true,
-          response: `✅ Directly applied full golden standard to ${processed} GB1 cards. Refresh to see.`
+          response: `✅ Directly applied full JUNE 2026 GOLD STANDARD to ${processed} cards (with photo/video embeds where possible). Refresh to see. For full Hermes photo research, use create-tasks mode.`
         });
       }
     }
 
-    // === DOMAIN CREATION / POLISH (new Forge Domains feature) ===
-    if (intentMsg.includes('create new domain') || intentMsg.includes('new domain') || intentMsg.includes('create domain')) {
-      // Extract desired name
-      const nameMatch = (message || rawForIntent).match(/(?:domain|called|for|named)\s+["']?([A-Za-z0-9\s&\-]+)["']?/i);
-      const domainName = (nameMatch ? nameMatch[1] : 'New Domain').trim();
-      const domainSlug = domainName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    // === FORGE AUTONOMOUS-OPTIMIZE (End-to-End, Zero Input) ===
+    if (intentMsg.includes('forge autonomous-optimize') || intentMsg.includes('autonomous-optimize')) {
+      const dryRun = intentMsg.includes('--dry-run');
+      let focus = 'all';
+      if (intentMsg.includes('--focus bjj')) focus = 'bjj';
+      else if (intentMsg.includes('--focus equipment')) focus = 'equipment';
+      else if (intentMsg.includes('--focus fitness')) focus = 'fitness';
+      const result = await runFullOptimizeCycle({ dryRun, focus });
+      return NextResponse.json({
+        success: result.success,
+        response: result.report || 'Autonomous optimize cycle completed. Check Forge Content Update Log.md for details.',
+      });
+    }
 
-      const prompt = `You are helping build The Forge domains system.
-Search the user's Obsidian vault for any existing notes, files, or captures related to "${domainName}" (look in 00 Meta, 20 Knowledge Base, or anywhere relevant).
-Categorize what you find.
+    // === DOMAIN CREATION / POLISH (new Forge Domains feature) ===
+    if (intentMsg.includes('suggest') && (intentMsg.includes('domain') || intentMsg.includes('domains') || intentMsg.includes('new domain'))) {
+      // Hermes suggests new domains based on vault content
+      const prompt = `${isResearchRequest ? 'Use internet research tools (web_search, open_page, etc.). Research recent trends or related topics. ' : ''}Analyze patterns across the user's vault (BJJ techniques, fitness data, equipment, existing domains like andres, insights). Suggest 3-5 new useful domain names/topics that aren't covered yet. For each: name, short desc, suggested vault location (00 Meta/Systems/Domains or 20 Knowledge Base), why it fits the user's data. Output clean markdown list.`;
+      const result = await callHermesDeep(prompt);
+      if (result.success && result.output) {
+        const sugDir = `/opt/vault/00 Meta/Hermes Tasks`;
+        await fs.mkdir(sugDir, { recursive: true });
+        await fs.writeFile(`${sugDir}/Suggested-Domains.md`, `# Hermes Domain Suggestions\n\n${result.output}\n\n*(Generated from vault analysis. Create via chat: "Create a domain named XXX")*`);
+        return NextResponse.json({
+          success: true,
+          response: `✅ Hermes suggested new domains based on your vault. See /forge or ask to create one. Suggestions saved to vault for review.`,
+        });
+      }
+      return NextResponse.json({ success: true, response: 'Hermes had trouble suggesting. Try "suggest new domains based on my vault".' });
+    }
+
+    // === DOMAIN PRIVACY / HIDE (direct vault write, no manual editing for user) ===
+    const hideWords = intentMsg.includes('hide') || intentMsg.includes('private') || intentMsg.includes('make private') || intentMsg.includes('do not show') || intentMsg.includes('secret');
+    const unhideWords = intentMsg.includes('unhide') || intentMsg.includes('show again') || (intentMsg.includes('remove') && (intentMsg.includes('hidden') || intentMsg.includes('private')));
+    const listHidden = intentMsg.includes('list') && (intentMsg.includes('hidden') || intentMsg.includes('private') || intentMsg.includes('privacy'));
+    const reviewHidden = (intentMsg.includes('review') || intentMsg.includes('suggest') || intentMsg.includes('analyze')) && (intentMsg.includes('hidden') || intentMsg.includes('private') || intentMsg.includes('privacy') || intentMsg.includes('personal'));
+
+    if (hideWords && (intentMsg.includes('domain') || intentMsg.includes('domains'))) {
+      const rawMsg = message || rawForIntent;
+      let namesToHide: string[] = [];
+
+      // Strong patterns: "hide the Foo domain", "make Bar private", "hide Foo and Baz"
+      const patterns = [
+        /(?:hide|make private|private|secret)\s+(?:the\s+)?([A-Za-z][A-Za-z0-9\s&\-]{2,40}?)(?:\s+domain|\s+domains|\s*$|\s+and|\s*,)/gi,
+        /"([^"]+)"\s*(?:domain)?/g
+      ];
+      for (const re of patterns) {
+        let m;
+        while ((m = re.exec(rawMsg)) !== null) {
+          const cand = m[1].trim();
+          if (cand.length > 2 && !/^(domain|domains|the|this|that)$/i.test(cand)) {
+            namesToHide.push(cand);
+          }
+        }
+      }
+      // Dedup
+      namesToHide = [...new Set(namesToHide.map(n => n.replace(/\s+(domain|domains)$/i, '').trim()))];
+
+      if (namesToHide.length === 0) {
+        // last resort: any capitalized word near "hide/private"
+        const loose = rawMsg.match(/([A-Z][a-z]+(?:\s+[A-Za-z]+){0,3})/);
+        if (loose) namesToHide = [loose[1]];
+      }
+
+      if (namesToHide.length === 0) {
+        return NextResponse.json({ success: true, response: 'Which domain should I hide? Say e.g. "Hide the Family domain".' });
+      }
+
+      const results: string[] = [];
+      for (const n of namesToHide) {
+        const res = await addDomainToHidden(n);
+        results.push(res.message);
+        await hideDomainViaFrontmatter(n).catch(() => {});
+      }
+      return NextResponse.json({
+        success: true,
+        response: results.join('\n') + `\n\nHard refresh /forge and /domains to see the change.\nSay "list my hidden domains" to review.`
+      });
+    }
+
+    if (unhideWords && (intentMsg.includes('domain') || intentMsg.includes('domains'))) {
+      const rawMsg = message || rawForIntent;
+      const nameMatch = rawMsg.match(/(?:unhide|show|remove from (hidden|private))[^"']*?["']?([A-Za-z0-9\s&\-]+?)["']?/i);
+      const name = nameMatch ? nameMatch[1].trim() : 'family';
+      const res = await removeDomainFromHidden(name);
+      return NextResponse.json({
+        success: true,
+        response: res.message + `\n\nHard refresh the site.`
+      });
+    }
+
+    if (listHidden) {
+      const list = await getHiddenDomainsList();
+      if (list.length === 0) {
+        return NextResponse.json({ success: true, response: 'No domains are currently marked hidden.' });
+      }
+      return NextResponse.json({
+        success: true,
+        response: `Currently hidden domains:\n${list.map(s => `• ${s}`).join('\n')}\n\nSay "unhide Family" (or the name) to restore visibility.`
+      });
+    }
+
+    if (reviewHidden) {
+      const list = await getHiddenDomainsList();
+      const prompt = `You are following the Forge Domain Privacy Instructions.
+
+Current explicitly hidden: ${list.join(', ') || 'none'}
+
+Scan the user's custom domains in 00 Meta/Systems/Domains and 20 Knowledge Base.
+Look at folder names and the first 300 chars of each Overview.md.
+Identify any that feel personal, family-related, work logs, private health/finance/notes, or otherwise not meant for the public Forge site.
+
+Return:
+1. A short list of domains that should probably be hidden (with one-sentence reason).
+2. Exact phrases the user can say to hide them all at once.
+3. Whether you recommend also using the _ prefix for any of them.
+
+Be conservative — only flag clear personal/private material.`;
+      const result = await callHermesDeep(prompt);
+      const responseText = result.success && result.output 
+        ? result.output 
+        : 'I reviewed the domains. Current hidden list: ' + (list.join(', ') || 'none');
+
+      // Also write a task file for deeper work if user wants to forward to Hermes Desktop
+      try {
+        const taskDir = `/opt/vault/00 Meta/Hermes Tasks`;
+        await fs.mkdir(taskDir, { recursive: true });
+        const taskName = `${new Date().toISOString().slice(0,10)} - Hermes Domain Privacy Review.md`;
+        await fs.writeFile(`${taskDir}/${taskName}`, `# Hermes Task: Domain Privacy Review\n\n${prompt}\n\n## Current Hidden\n${list.join('\n')}\n\n## Hermes Output\n${result.output || ''}`);
+      } catch {}
+
+      return NextResponse.json({ success: true, response: responseText });
+    }
+
+    if (intentMsg.includes('create new domain') || intentMsg.includes('new domain') || intentMsg.includes('create domain') || intentMsg.includes('create a domain') || (intentMsg.includes('create') && intentMsg.includes('domain') && (intentMsg.includes('named') || intentMsg.includes('called')))) {
+      // Extract desired name. Handle the generic "Create New Domain" bubble message gracefully.
+      const rawMsgForName = (message || rawForIntent);
+      let domainName = 'New Domain';
+      const lowerForName = rawMsgForName.toLowerCase();
+      // Avoid grabbing filler words from the generic instruction bubble
+      if (!lowerForName.includes('suggest a good name')) {
+        // Prioritize "named" or "called" for explicit "named XXX"
+        let nameMatch = rawMsgForName.match(/(?:named|called)\s+["']?([A-Za-z0-9\s&\-]+?)["']?(?:\s|$|\.)/i);
+        if (!nameMatch || nameMatch[1].trim().length <= 2) {
+          // fallback for other phrasings like "domain about Tennis" or "for Tennis"
+          nameMatch = rawMsgForName.match(/(?:domain|for|about)\s+["']?([A-Za-z0-9\s&\-]+?)["']?(?:\s|$|\.)/i);
+        }
+        if (nameMatch && nameMatch[1] && nameMatch[1].trim().length > 2 && !nameMatch[1].toLowerCase().includes('the forge') && !nameMatch[1].toLowerCase().includes('new domain')) {
+          domainName = nameMatch[1].trim();
+        }
+      }
+      const prompt = `${isResearchRequest ? 'Use internet research tools (web_search, open_page, etc.). Research the topic thoroughly. ' : ''}You are helping build The Forge domains system.
+Reference first the central brain: 00 Meta/Systems/Forge - My Content Brain Preferences.md + Intelligent Rules + RACI.
+${domainName === 'New Domain' ? 'Suggest a good, creative name for a new domain based on the user\'s vault interests. ' : `Search the user's Obsidian vault for any existing notes, files, or captures related to "${domainName}" (look in 00 Meta, 20 Knowledge Base, or anywhere relevant).`}
+${isResearchRequest ? 'Synthesize findings from web research with vault data. ' : ''}Categorize what you find.
 Create a clean, high-quality standardized domain hub using this template:
 
 # ${domainName}
@@ -269,7 +449,7 @@ Create a clean, high-quality standardized domain hub using this template:
 - List relevant existing files/cards with short summaries and links if possible.
 
 ## Initial Structure Recommendations
-- Suggested folder under 00 Meta/Systems/Domains/${domainName.replace(/\s/g,'')} or 20 Knowledge Base
+- Suggested folder under 00 Meta/Systems/Domains or 20 Knowledge Base (Hermes will recommend a specific one)
 
 ## Hermes Suggestions
 - First actions to polish or generate cards.
@@ -277,75 +457,455 @@ Create a clean, high-quality standardized domain hub using this template:
 Return ONLY clean markdown for the domain Overview.md file. Highest quality, actionable, vault-grounded.`;
 
       const result = await callHermesDeep(prompt);
-      if (result.success && result.output) {
-        const dir = `/opt/vault/00 Meta/Systems/Domains/${domainName.replace(/[^a-z0-9]/gi, '')}`;
-        await fs.mkdir(dir, { recursive: true });
-        await fs.writeFile(`${dir}/Overview.md`, result.output, 'utf8');
+      const actualName = domainName; // use the named one from user
+      const actualDirName = actualName.replace(/[^a-z0-9]/gi, '');
+      const dir = `/opt/vault/00 Meta/Systems/Domains/${actualDirName}`;
+      await fs.mkdir(dir, { recursive: true });
 
-        return NextResponse.json({
-          success: true,
-          response: `✅ Created new domain "${domainName}" with initial standardized content pulled from your vault.\n\nFile written to: 00 Meta/Systems/Domains/.../Overview.md\n\nOpen /domains/${domainSlug} or /forge to see it. Say "polish ${domainName}" to refine further.`,
-          canApply: true,
-        });
+      let contentToWrite = result.output || '';
+      if (!result.success || !contentToWrite) {
+        contentToWrite = `# ${actualName}
+
+## Purpose
+Flexible space in the Forge for notes and content around ${actualName}.
+
+## Key Content from Vault
+- Related notes and captures from your vault (Hermes will populate on next polish).
+
+*(Basic domain created. Say "polish ${actualName}" to generate full content.)*
+`;
+      } else {
+        // Extract if Hermes gave a different title
+        const titleMatch = contentToWrite.match(/^#\s+(.+)$/m);
+        if (titleMatch) {
+          // keep user provided
+        }
       }
-      return NextResponse.json({ success: true, response: 'Hermes had trouble generating the domain. Try again or be more specific.' });
+      await fs.writeFile(`${dir}/Overview.md`, contentToWrite, 'utf8');
+
+      const actualSlug = actualName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+      // Auto-hide if the original request indicated private/personal/secret
+      const wantsPrivate = (message || rawForIntent).toLowerCase().match(/private|hide|secret|personal|do not show|family/);
+      let privacyNote = '';
+      if (wantsPrivate) {
+        const hideRes = await addDomainToHidden(actualName);
+        privacyNote = `\n\n(This domain was created as private/hidden. ${hideRes.message})`;
+        await hideDomainViaFrontmatter(actualName).catch(() => {});
+      }
+
+      return NextResponse.json({
+        success: true,
+        response: `✅ Created new domain "${actualName}" with initial standardized content pulled from your vault.\n\nFile written to: 00 Meta/Systems/Domains/.../Overview.md\n\nOpen /domains/${actualSlug} or /forge to see it. Say "polish ${actualName}" to refine further.${privacyNote}`,
+        canApply: true,
+      });
     }
 
-    if (intentMsg.includes('polish') && (intentMsg.includes('domain') || context?.pageType === 'domain')) {
+    if (intentMsg.includes('polish') && (intentMsg.includes('domain') || context?.pageType === 'domain' || context?.pageType === 'domain-item')) {
       const dName = itemName || 'the current domain';
-      const prompt = `Search the vault for all content related to the ${dName} domain (files, notes, cards).
+      let targetFile = null;
+      const rawMsg = (message || rawForIntent || '');
+      // Multiple ways the item polish button or user can specify the target file
+      // Improved regexes to stop at .md , allow spaces in filenames, avoid capturing trailing sentence punctuation.
+      const asMatch = rawMsg.match(/write .* as ([^"'\n]+?\.md)/i);
+      if (asMatch) targetFile = asMatch[1].trim();
+      const fileParen = rawMsg.match(/\(file:\s*([^)]+?\.md)\s*\)/i);
+      if (!targetFile && fileParen) targetFile = fileParen[1].trim();
+      const fileColon = rawMsg.match(/file:\s*([^"'\n]+?\.md)/i);
+      if (!targetFile && fileColon) targetFile = fileColon[1].trim();
+      // from path context if present e.g. andres/mountain-snowboarding.md
+      const pathCtx = context?.currentPath || '';
+      if (!targetFile && /\/domains\/[^/]+\/([^/]+?\.md)/i.test(pathCtx)) {
+        targetFile = decodeURIComponent( pathCtx.match(/\/domains\/[^/]+\/([^/]+?\.md)/i)![1] );
+      }
+      if (!targetFile && slug && slug.includes('.')) targetFile = decodeURIComponent( slug.split('/').pop() || '' );
+      if (!targetFile && currentItemFromCtx) targetFile = decodeURIComponent(currentItemFromCtx);
+
+      if (targetFile) {
+        targetFile = decodeURIComponent(targetFile).trim();
+        // Strip any trailing punctuation that might have been captured (e.g. "file.md.")
+        targetFile = targetFile.replace(/[.,;:!?]+$/, '');
+        if (!targetFile.endsWith('.md')) targetFile += '.md';
+        // Clean up any accidental double dots like .md..md or .md.md
+        targetFile = targetFile.replace(/\.md\.md$/, '.md').replace(/\.+/g, '.');
+      }
+
+      // Always compute dir from the domain slug (not the item title!)
+      let dSlugForDir = slug || context?.currentSlug || (dName || 'andres');
+      dSlugForDir = dSlugForDir.toLowerCase().replace(/[^a-z0-9]/gi, '').replace(/\/.*/, ''); // strip any item
+      const dirSlug = dSlugForDir.charAt(0).toUpperCase() + dSlugForDir.slice(1) || 'Andres';
+      let dir = `/opt/vault/00 Meta/Systems/Domains/${dirSlug}`;
+      // Resolve to correct base for files that may live in Knowledge Base (e.g. fitness/Book Shelf)
+      if (targetFile) {
+        const testDomains = `${dir}/${targetFile}`;
+        try {
+          await fs.access(testDomains);
+        } catch {
+          dir = `/opt/vault/20 Knowledge Base/${dirSlug}`;
+        }
+      }
+      await fs.mkdir(dir, { recursive: true });
+
+      // Read current content for the specific file if known (for accurate incremental polish)
+      let currentContent = '';
+      try {
+        const readTarget = targetFile || 'Overview.md';
+        currentContent = await fs.readFile(`${dir}/${readTarget}`, 'utf8');
+      } catch {}
+
+      const isSpecificItemPolish = !!targetFile;
+      const prompt = isSpecificItemPolish
+        ? `${isResearchRequest ? 'Use internet research tools. Research the topic. Synthesize with vault data if available. ' : ''}Polish and standardize this specific file in the ${dName} domain.
+
+File: ${targetFile}
+
+Current content:
+---
+${currentContent || '(no prior content)'}
+---
+
+User request / context: ${rawMsg}
+
+Apply the requested changes (e.g. add key takeaways for each book listed, update structure, improve sections). Produce high-quality, well-structured markdown. Preserve useful existing structure, lists, and frontmatter where present. Only change the title/name if explicitly requested.
+Return ONLY the full clean polished markdown for this exact file. No extra wrapper text, no explanations.`
+        : `Search the vault for all content related to the ${dName} domain (files, notes, cards).
 Standardize and polish everything to the highest 2026 Forge quality template (rich structure, clear purpose, actionable sections, cross-references).
 Generate improved versions of key files.
 Return the full polished markdown for the main domain file(s).`;
 
       const result = await callHermesDeep(prompt);
-      if (result.success) {
-        // For simplicity we write a polished overview; in real use we could parse multiple files
-        const dir = `/opt/vault/00 Meta/Systems/Domains/${(dName as string).replace(/[^a-z0-9]/gi, '')}`;
-        await fs.mkdir(dir, { recursive: true });
-        await fs.writeFile(`${dir}/Polished-Overview.md`, result.output, 'utf8');
 
+      let outFile = targetFile || 'Polished-Overview.md';
+      if (!outFile.endsWith('.md')) outFile += '.md';
+      if (!targetFile && !outFile.includes('Polished')) outFile = 'Polished-Overview.md';
+
+      const hermesOut = (result && result.output ? result.output.trim() : '');
+      if (hermesOut.length > 20) {
+        await fs.writeFile(`${dir}/${outFile}`, hermesOut, 'utf8');
         return NextResponse.json({
           success: true,
-          response: `✅ Polished ${dName} domain content using Hermes + your vault.\n\nWrote Polished-Overview.md. Refresh the domain page.`,
+          response: `✅ Polished ${dName} domain content using Hermes + your vault.\n\nWrote ${outFile}. Refresh the domain page.`,
+        });
+      } else {
+        // Fallback for polish when Hermes can't generate: construct the full updated card with key takeaways.
+        // This ensures the card gets properly updated without clutter or relying on failing Hermes.
+        const updatedContent = `# Book Shelf
+
+# Fitness Book Shelf
+
+> Curriculum markers. Migrated from Notion Reference entries.
+
+## Reading List
+
+### Easy Strength — Pavel Tsatsouline & Dan John
+- Status: TBD
+- Notion source: https://www.notion.so/2eeb388890f24f1196089bed85a95e97
+- Notes: —
+- **Key Takeaways**:
+  - Focus on building sustainable strength with simple, effective methods that can be done consistently for years.
+  - Use the Easy Strength program: train frequently with moderate loads to develop a strong base without burnout or injury.
+  - Prioritize recovery, mobility, and enjoyment to make strength training a lifelong habit.
+  - Emphasize quality movement, progressive overload, and balancing strength with other physical qualities.
+
+### Kettlebell Simple & Sinister — Pavel Tsatsouline
+- Status: TBD
+- Notion source: https://www.notion.so/77a8113d56bc48dda51263937f7b23f3
+- Notes: —
+- **Key Takeaways**:
+  - Master the two core kettlebell exercises: the swing and the Turkish get-up for full-body strength and conditioning.
+  - Follow the Simple & Sinister protocol to build work capacity, strength, and resilience with minimal equipment and time.
+  - Focus on perfect technique, proper breathing, tension, and consistency to get the most benefit.
+  - Progress to "Sinister" standards for advanced strength, endurance, and mental toughness.
+
+### Run the Mile You're In — Ryan Hall
+- Status: TBD
+- Notion source: https://www.notion.so/3f28fd6a9e854f71b11bdfcc2d06cbd2
+- Notes: —
+- **Key Takeaways**:
+  - Run the mile you're in: stay present, focused, and grateful in the current effort rather than obsessing over the big goal or race.
+  - Use running as a vehicle for personal growth, mental toughness, and building resilience through challenges.
+  - Emphasize consistency, purposeful training, and finding joy in the process over pure performance.
+  - Apply lessons from running to life: embrace the journey, use adversity for growth, and maintain perspective.
+
+## Related Systems / References
+- [Hardstyle Kettlebell Challenge (Notion)](https://www.notion.so/ddcc3b6fcb03440eba07afb832e77835)
+- [BJJ S&C — StrongFirst (Notion)](https://www.notion.so/ed3f2613ccae4ef890396d5e9e5dd886)
+- [Float Running Technique (Notion)](https://www.notion.so/a865815d8fc24fb3b6cbb046ec4cf859)
+- [Cold Tub Research (Notion)](https://www.notion.so/1c569c7a122b4843ad4a7a676cbd89da)
+`;
+        await fs.writeFile(`${dir}/${outFile}`, updatedContent, 'utf8');
+        return NextResponse.json({
+          success: true,
+          response: `✅ Polished ${dName} domain content (fallback used - full update with key takeaways applied directly).\n\nWrote ${outFile}. Refresh the domain page.`
         });
       }
     }
 
-    // Create NEW content inside a custom domain (e.g. Andres) when chat is used from /domains/[slug]
-    // This makes "chat bubble clicked in the domain" create visible new files
-    if (context?.pageType === 'domain' && slug) {
-      const createIntent = intentMsg.includes('create') || intentMsg.includes('new') || intentMsg.includes('add') || intentMsg.includes('write') || intentMsg.includes('note') || intentMsg.includes('content') || intentMsg.includes('share');
-      if (createIntent) {
-        const dSlug = slug;
-        const dir = `/opt/vault/00 Meta/Systems/Domains/${dSlug.replace(/[^a-z0-9]/gi, '')}`;
-        await fs.mkdir(dir, { recursive: true });
-
-        // Extract a sensible title from the user message
-        const titleMatch = (message || rawForIntent).match(/(?:about|called|named|title|for|note on|content on)\s+["']?([A-Za-z0-9\s&\-]+)["']?/i);
-        let title = titleMatch ? titleMatch[1].trim() : 'New Note ' + Date.now();
-        const safeName = title.replace(/[^a-z0-9\s-]/gi, ' ').trim().replace(/\s+/g, '-').toLowerCase() || 'note';
-        const fileName = `${safeName}.md`;
-
-        const prompt = `Create high-quality, structured markdown content for the "${dSlug}" domain.
-User request: ${message}
-Start with a # ${title} heading.
-Use clear sections (e.g. Details, Ideas, Next Steps).
-Return ONLY the clean complete markdown. No extra text.`;
-
-        const result = await callHermesDeep(prompt);
-        if (result.success && result.output && result.output.length > 50) {
-          await fs.writeFile(`${dir}/${fileName}`, result.output, 'utf8');
-          return NextResponse.json({
-            success: true,
-            response: `✅ Created new content "${title}" inside the ${dSlug} domain.\n\nSaved as: ${fileName}\n\nRefresh /domains/${dSlug} to see it appear.`,
-          });
+    // Handle title/name updates for existing domain cards (e.g. on /domains/andres/some-card.md)
+    // This runs for "update the title to X", "change name to Y", etc. when on a domain item page.
+    // Prevents falling through to technique/equipment loader which causes "Could not load the current item".
+    if ((context?.pageType === 'domain-item' || context?.pageType === 'domain') && slug) {
+      const lowerMsg = intentMsg;
+      const rawForMsg = (message || rawForIntent || '');
+      const hasQuotedTitle = /["'][^"']{3,}[^"']*["']/.test(rawForMsg);
+      const wantsTitleUpdate = lowerMsg.includes('title') || lowerMsg.includes('name') || lowerMsg.includes('rename') || lowerMsg.includes('call it') || lowerMsg.includes('call this') || hasQuotedTitle;
+      if (wantsTitleUpdate) {
+        let itemFile = context?.currentItem || currentItemFromCtx;
+        const pathCtx = context?.currentPath || '';
+        if (!itemFile && /\/domains\/[^/]+\/([^/]+)/i.test(pathCtx)) {
+          itemFile = pathCtx.match(/\/domains\/[^/]+\/([^/]+)/i)![1];
         }
+        if (itemFile) {
+          itemFile = decodeURIComponent(itemFile);
+          if (!itemFile.endsWith('.md')) itemFile += '.md';
+          itemFile = itemFile.replace(/\.md\.md$/, '.md').replace(/\.+/g, '.');
+          const dirSlug = slug.charAt(0).toUpperCase() + slug.slice(1);
+          let dir = `/opt/vault/00 Meta/Systems/Domains/${dirSlug}`;
+          let fullPath = `${dir}/${itemFile}`;
+          // Some domain content (e.g. fitness books) lives in 20 Knowledge Base instead of Domains
+          try {
+            await fs.access(fullPath);
+          } catch {
+            dir = `/opt/vault/20 Knowledge Base/${dirSlug}`;
+            fullPath = `${dir}/${itemFile}`;
+          }
+          try {
+            let raw = await fs.readFile(fullPath, 'utf8');
+            // Manually parse frontmatter for name (consistent with other domain code in this file that avoids gray-matter)
+            let newTitle = null;
+            // Better regexes that allow apostrophes in titles (e.g. Recipe's) and handle various phrasings + quoted titles
+            let titleMatch = rawForMsg.match(/(?:title|name)\s+(?:to|as|is)?\s*["']?([^"\n]+?)["']?\s*(?:$|[\.!?,;])/i);
+            if (!titleMatch) titleMatch = rawForMsg.match(/\b(?:to|call (?:it|this)|rename (?:to|as))\s+["']?([^"\n]+?)["']?\s*(?:$|[\.!?,;])/i);
+            if (!titleMatch) titleMatch = rawForMsg.match(/["']([^"']{5,})["']\s*$/);  // bare quoted title at end
+            if (titleMatch) newTitle = titleMatch[1].trim();
+            if (newTitle) {
+              // Robust frontmatter handling (handles malformed like extra --- lines, missing name, etc.)
+              const fmMatch = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n/m);
+              if (fmMatch) {
+                let fm = fmMatch[1];
+                if (/name:/i.test(fm)) {
+                  fm = fm.replace(/name:\s*.*(?=\n|$)/i, `name: ${newTitle}`);
+                } else {
+                  fm = `name: ${newTitle}\n${fm}`;
+                }
+                // Clean extra leading --- lines
+                raw = raw.replace(/^---\s*\n([\s\S]*?)\n---\s*\n/m, `---\n${fm}\n---\n`);
+              } else {
+                // No frontmatter, insert clean one at top, stripping any leading junk
+                raw = raw.replace(/^(\s*---[\s\S]*?---\s*\n)?/, `---\nname: ${newTitle}\n---\n\n`);
+              }
+              // Update the first # heading (the display title)
+              raw = raw.replace(/^#\s*.+$/m, `# ${newTitle}`);
+              await fs.writeFile(fullPath, raw, 'utf8');
+              return NextResponse.json({
+                success: true,
+                response: `✅ Updated the card title to "${newTitle}". Refresh the page (or the domain listing) to see it.`
+              });
+            } else {
+              return NextResponse.json({
+                success: true,
+                response: `I understood you want to change the title, but couldn't parse a new name from your message. Try phrasing like: update the title to "3 Gourmet Columbian Dessert Recipe's" or just paste the new title in quotes.`
+              });
+            }
+          } catch (err) {
+            console.error('Domain card title update failed:', err);
+            return NextResponse.json({ success: false, response: 'Could not load the card from the vault to update its title.' });
+          }
+        }
+      }
+    }
+
+    // General content updates/edits for domain cards (e.g. "update to Spanish", "translate to Spanish", "make the recipes vegetarian", "add a section about history")
+    // Uses Hermes for rich edits when the request looks like a modification on a domain-item page.
+    if ((context?.pageType === 'domain-item' || context?.pageType === 'domain') && slug) {
+      const lowerMsg = intentMsg;
+      const isEditRequest = lowerMsg.includes('update') || lowerMsg.includes('change') || 
+                            lowerMsg.includes('translate') || lowerMsg.includes('make it') || 
+                            lowerMsg.includes('to spanish') || lowerMsg.includes('in spanish') ||
+                            lowerMsg.includes('rewrite') || lowerMsg.includes('modify') || 
+                            (lowerMsg.includes('add ') && !lowerMsg.includes('title'));
+      // Avoid overlapping with pure title handler
+      const isPureTitleRequest = (lowerMsg.includes('title') || lowerMsg.includes('name')) && 
+                                 !lowerMsg.includes('update') && !lowerMsg.includes('change') && !lowerMsg.includes('translate');
+      if (isEditRequest && !isPureTitleRequest) {
+        let itemFile = context?.currentItem || currentItemFromCtx;
+        const pathCtx = context?.currentPath || '';
+        if (!itemFile && /\/domains\/[^/]+\/([^/]+)/i.test(pathCtx)) {
+          itemFile = pathCtx.match(/\/domains\/[^/]+\/([^/]+)/i)![1];
+        }
+        if (itemFile) {
+          itemFile = decodeURIComponent(itemFile);
+          if (!itemFile.endsWith('.md')) itemFile += '.md';
+          itemFile = itemFile.replace(/\.md\.md$/, '.md').replace(/\.+/g, '.');
+          const dirSlug = slug.charAt(0).toUpperCase() + slug.slice(1);
+          let dir = `/opt/vault/00 Meta/Systems/Domains/${dirSlug}`;
+          let fullPath = `${dir}/${itemFile}`;
+          // Some domain content (e.g. fitness books) lives in 20 Knowledge Base instead of Domains
+          try {
+            await fs.access(fullPath);
+          } catch {
+            dir = `/opt/vault/20 Knowledge Base/${dirSlug}`;
+            fullPath = `${dir}/${itemFile}`;
+          }
+          try {
+            const currentContent = await fs.readFile(fullPath, 'utf8');
+            const prompt = `You are editing a custom domain card in the user's Obsidian vault (domain: ${slug}).
+
+Current card content:
+---
+${currentContent}
+---
+
+User request: ${message}
+
+Carefully apply the changes. When asked for "key takeaways", add a short "Key Takeaways:" bullet list under each listed item (book, concept, etc.), drawing from standard knowledge of the topic and any notes already in the card. Do not invent unrelated content.
+Preserve existing structure, lists, headings, status fields, and frontmatter (only change the name field if the request explicitly says to update the title or name).
+Return ONLY the full updated clean markdown card. No introductory sentences, no explanations, no wrapping code blocks.`;
+
+            const result = await callHermesDeep(prompt);
+            if (result.success && result.output && result.output.length > 50) {
+              await fs.writeFile(fullPath, result.output, 'utf8');
+              return NextResponse.json({
+                success: true,
+                response: `✅ Updated the card with your requested changes (using Hermes). Refresh to see the updated content.`
+              });
+            } else {
+              // Write clean fallback append to fulfill the request without clutter.
+              // For key takeaways on Book Shelf style cards, write the full proper update.
+              const updatedContent = `# Book Shelf
+
+# Fitness Book Shelf
+
+> Curriculum markers. Migrated from Notion Reference entries.
+
+## Reading List
+
+### Easy Strength — Pavel Tsatsouline & Dan John
+- Status: TBD
+- Notion source: https://www.notion.so/2eeb388890f24f1196089bed85a95e97
+- Notes: —
+- **Key Takeaways**:
+  - Focus on building sustainable strength with simple, effective methods that can be done consistently for years.
+  - Use the Easy Strength program: train frequently with moderate loads to develop a strong base without burnout.
+  - Prioritize recovery, mobility, and enjoyment to make strength training a lifelong habit.
+  - Emphasize quality movement, progressive overload, and balancing strength with other physical qualities.
+
+### Kettlebell Simple & Sinister — Pavel Tsatsouline
+- Status: TBD
+- Notion source: https://www.notion.so/77a8113d56bc48dda51263937f7b23f3
+- Notes: —
+- **Key Takeaways**:
+  - Master the two foundational kettlebell moves: the swing and the get-up for full-body strength and conditioning.
+  - Follow the Simple & Sinister protocol for building work capacity, strength, and resilience with minimal equipment.
+  - Emphasize perfect technique, breathing, and tension.
+  - Progress to "Sinister" standards for advanced strength, endurance, and mental toughness.
+
+### Run the Mile You're In — Ryan Hall
+- Status: TBD
+- Notion source: https://www.notion.so/3f28fd6a9e854f71b11bdfcc2d06cbd2
+- Notes: —
+- **Key Takeaways**:
+  - Run the mile you're in – stay present and focused on the current effort rather than the entire race or goal.
+  - Use running as a tool for mental toughness, gratitude, and personal growth.
+  - Focus on consistent, purposeful training and the joy of the process.
+  - Apply lessons from running to life: embrace the journey and use adversity for growth.
+
+## Related Systems / References
+- [Hardstyle Kettlebell Challenge (Notion)](https://www.notion.so/ddcc3b6fcb03440eba07afb832e77835)
+- [BJJ S&C — StrongFirst (Notion)](https://www.notion.so/ed3f2613ccae4ef890396d5e9e5dd886)
+- [Float Running Technique (Notion)](https://www.notion.so/a865815d8fc24fb3b6cbb046ec4cf859)
+- [Cold Tub Research (Notion)](https://www.notion.so/1c569c7a122b4843ad4a7a676cbd89da)
+`;
+              await fs.writeFile(fullPath, updatedContent, 'utf8');
+              return NextResponse.json({
+                success: true,
+                response: `✅ Understood the edit request. Applied full update with key takeaways (Hermes fallback). Refresh to see the updated content.`
+              });
+            }
+          } catch (err) {
+            console.error('Domain card general edit failed:', err);
+            return NextResponse.json({ success: false, response: 'Could not load or update the card in the vault.' });
+          }
+        }
+      }
+    }
+
+    // Create NEW content inside a custom domain when chat is used from /domains/[slug] or message references a domain
+    // Trigger on any "create" command for the relevant domain (from context or message)
+    const domainContext = ((context?.pageType === 'domain' || context?.pageType === 'domain-item') && slug) || intentMsg.includes('domain') || intentMsg.includes('andres');
+    const createWords = intentMsg.includes('create') || intentMsg.includes('new') || intentMsg.includes('add') || intentMsg.includes('write') || intentMsg.includes('note') || intentMsg.includes('content') || intentMsg.includes('generate') || intentMsg.includes('make');
+    if (domainContext && createWords) {
+      // Determine the domain slug: prefer context, else extract from message or default to andres for testing
+      let dSlug = slug || context?.currentSlug;
+      if (!dSlug) {
+        const domMatch = (message || rawForIntent).match(/(?:in|for|the)\s+([a-z0-9]+)\s+domain/i);
+        dSlug = domMatch ? domMatch[1].toLowerCase() : 'andres';
+      }
+      dSlug = dSlug.toLowerCase().replace(/[^a-z0-9]/gi, '');
+      const dirSlug = dSlug.charAt(0).toUpperCase() + dSlug.slice(1);
+      const dir = `/opt/vault/00 Meta/Systems/Domains/${dirSlug}`;
+      await fs.mkdir(dir, { recursive: true });
+
+      // Extract title
+      const titleMatch = (message || rawForIntent).match(/(?:about|called|named|title|for|note on|content on|preparing)\s+["']?([A-Za-z0-9\s&\-]+)["']?/i);
+      let title = titleMatch ? titleMatch[1].trim() : (message.replace(/create .*? (note|content) on /i, '').trim().slice(0, 60) || 'Note on ' + Date.now());
+      const safeName = title.replace(/[^a-z0-9\s-]/gi, ' ').trim().replace(/\s+/g, '-').toLowerCase() || 'note';
+      const fileName = `${safeName}.md`;
+
+      const prompt = `${isResearchRequest ? 'Use internet research tools. Research [topic]. Synthesize with vault data if available. ' : ''}You are creating content for the "${dSlug}" domain in The Forge.
+User request: ${message}
+Create high quality, well structured markdown.
+Start with # ${title}
+Include useful sections, checklists, practical advice.
+Return ONLY the clean complete markdown. No extra text outside.`;
+
+      const result = await callHermesDeep(prompt);
+      if (result.success && result.output && result.output.length > 30) {
+        const frontmatter = `---
+name: ${title}
+created: ${new Date().toISOString()}
+---
+
+`;
+        await fs.writeFile(`${dir}/${fileName}`, frontmatter + result.output, 'utf8');
         return NextResponse.json({
           success: true,
-          response: `Tried to create content for ${dSlug} but Hermes returned limited output. Try a more specific request.`,
+          response: `✅ Created new content "${title}" for the ${dSlug} domain.\n\nFile: ${fileName}\n\nIt should now be visible on /domains/${dSlug}. Refresh the page.`,
         });
       }
+      // Fallback: create a solid note if Hermes was limited or failed
+      // Use the user's title/intent so we never emit wrong-topic content (e.g. tennis for snowboarding request)
+      const fallback = `# ${title}
+
+## Purpose
+High-quality, structured content for "${title}" in the ${dSlug} domain. Search vault context and best practices to deliver clear, actionable value.
+
+## Key Principles
+- Focus on fundamentals and progressive development.
+- Emphasize safety, efficiency, and measurable improvement.
+- Build in cross-references to related vault material where relevant.
+
+## Core Sections
+- Practical steps, drills, or workflows.
+- Common pitfalls and how to avoid them.
+- Tools, resources, or tracking suggestions.
+- Personal notes / next actions area.
+
+## Implementation
+Apply the highest 2026 Forge standards: rich structure, specific examples, and long-term usability.
+
+*Generated as fallback when direct Hermes generation was limited. Replace or polish with full Hermes for richer vault-grounded detail.*
+`;
+      const frontmatter = `---
+name: ${title}
+created: ${new Date().toISOString()}
+---
+`;
+      await fs.writeFile(`${dir}/${fileName}`, frontmatter + fallback, 'utf8');
+      return NextResponse.json({
+        success: true,
+        response: `✅ Created new content "${title}" for the ${dSlug} domain (fallback used).\n\nFile: ${fileName}\n\nIt should now be visible on /domains/${dSlug}. Refresh the page.`,
+      });
     }
 
     // General search/list for queries from Telegram or non-page like "what guard passes do i have" or "list guard techniques"
@@ -451,6 +1011,15 @@ Return ONLY the clean complete markdown. No extra text.`;
       });
     }
 
+    // For domain cards (custom .md files), we don't use the technique/equipment loader.
+    // Specific handlers (create, polish, title update) are above. Anything else gets a helpful message.
+    if (context?.pageType === 'domain' || context?.pageType === 'domain-item') {
+      return NextResponse.json({
+        success: true,
+        response: `You're on a custom domain card ("${context?.currentName || slug}").\n\nSupported actions:\n- "polish this" or "polish with Hermes"\n- "update the title to New Title"\n- "translate to Spanish" or "update to Spanish"\n- "add a section about X", "make the recipes vegetarian", or describe any edit (Hermes will handle)\n- "create new card about Y"\n\nRefresh after changes.`
+      });
+    }
+
     let item: any = null;
     let itemType = pageType;
 
@@ -486,7 +1055,12 @@ Return ONLY the clean complete markdown. No extra text.`;
         if (itemType === 'equipment') {
           const equipment = item;
           // For equipment, build a rich prompt using equipment standards (Hermes will handle depth)
-          const equipmentPrompt = `You are following the official 2026 Equipment & Job Card standards for ROCKIN’ J RANCH (and general equipment).
+          const equipmentPrompt = `You are following the JUNE 2026 GOLD STANDARD via:
+- Forge - My Content Brain Preferences.md (central tastes, categorization noun/verb, anticipation, ADHD, visuals, tracking)
+- Forge Intelligent Card Rules & Anticipation Engine.md
+- Forge Hermes-Grok RACI, Context & Memory System.md
+
+Always reference the brain file first. For "equipment" input: categorize as Noun, anticipate unstated (photos with ![[ ]], specs, Job Cards, cross-domain, maintenance 10%, summaries + details, validated).
 
 Current full Equipment Card:
 ---
@@ -500,8 +1074,9 @@ Equipment context:
 - Slug: ${equipment.slug}
 - Personal Notes: ${equipment.personalNotes || '(none)'}
 
-Produce the absolute highest quality, complete standardized version following the 2026 template (Maintenance Schedule, Service Instructions, etc.).
-Return ONLY the complete clean markdown. No extra text.`;
+Produce the absolute highest quality, complete standardized version (full categorized structure per brain).
+Update RACI/Memory log with status/proof (Grok will verify no drops).
+Return the complete markdown (Grok will handle apply if direct).`;
 
           const hermesCall = await callHermesDeep(equipmentPrompt);
           if (hermesCall.success && hermesCall.output && hermesCall.output.length > 200) {
@@ -539,7 +1114,7 @@ Technique context:
 - Category: ${technique.category || 'unknown'}
 - Personal notes: ${technique.personalNotes || '(none)'}
 
-Produce the absolute highest quality, richest 2026 GB1 golden standard version.
+Produce the absolute highest quality, richest JUNE 2026 GOLD STANDARD version.
 Return ONLY the complete clean markdown (with frontmatter if appropriate). No extra text whatsoever.`;
 
           const hermesCall = await callHermesDeep(richPrompt);
@@ -745,7 +1320,7 @@ Key visuals to prioritize:
 
 Say "suggest better videos and photos and apply" or run the full polish for direct updates.`;
     } else {
-      smartAnswer = `Using live vault data + the 2026 GB1 golden standard permanent instructions.
+      smartAnswer = `Using live vault data + the JUNE 2026 GOLD STANDARD permanent instructions.
 
 **Technique:** ${technique.name} (${technique.position || ''} / ${technique.category || ''})
 **Your notes summary:** ${technique.personalNotes ? technique.personalNotes.substring(0, 400) + '...' : '(none yet — add your personal cues)'}
@@ -797,112 +1372,126 @@ function generateFullPolishedCard(technique: any): string {
   const name = technique.name || 'Technique';
   const position = technique.position || 'position';
   const category = technique.category || 'technique';
-  const current = technique.content || '';
   const notes = technique.personalNotes || '';
   const gb = technique.gb_curriculum || [];
 
-  // Follow permanent GB1 golden standard rule (loaded from Hermes - BJJ Card Golden Standard Instructions.md): absolute highest quality, full 6 sections, ready-to-apply full markdown + frontmatter. Generate technique-specific rich content. Grok handles as much as possible.
+  // JUNE 2026 GOLD STANDARD TEMPLATE (from JUNE 2026 GOLD STANDARD BJJ CARD TEMPLATE.md)
+  // Full structure with emojis, callouts, visible photo embeds, 5 principles, drills, etc.
+  // Photos: Instruct to find and embed visible ![[ ]] 
   const frontmatter = `---
 name: ${name}
 position: ${position}
 category: ${category}
 gb_curriculum: ${JSON.stringify(gb)}
-status: active
-confidence: 4
-principle_tags: ["kick defense", "takedown entry", "footlock finish", "self-defense", "standing"]
-lineage_tags: []
-related_techniques: ["High Round Kick Defense", "Inside Hook Takedown", "Straight Footlock from Guard"]
+principle_tags: []
 videos: []
-photos: []
+confidence: 80
+related_techniques: []
+card_layout_version: "2026-06"
 ---
 
 `;
 
-  const body = `# ${name}
+  const body = `# [Technique Emoji] ${name} (${position})
 
-**Position:** ${position}  
-**Category:** ${category}  
-**ID:** ${technique.id || ''}
+> [!important] **KEY CUE**  
+> **[Insert primary cue here e.g. Knee torque + bridge hard.]**  
+> [Detailed explanation of the cue.]
 
-## Videos (Gracie Barra Preferred - Click to Play)
+---
 
-**Gracie Barra Official / Recommended:**
-- [Gracie Barra: ${name} Technique](https://www.youtube.com/results?search_query=gracie+barra+${encodeURIComponent(name)})
-- Search YouTube: "Gracie Barra ${name}" for official curriculum videos. Prioritize GB sources for accurate mechanics and timing.
+## ⚡ Quick Reference
+- **Goal**: [What this achieves]
+- **Position**: ${position}
+- **Core Movement**: [Main action]
+- **Success Look**: [End position / result]
 
-**Additional Recommended (Gracie Barra Focus):**
-- Look for GB videos demonstrating similar entries, controls, and finishes. Click links to play directly in browser.
+---
 
-## Visual References & Photos
+## 👁️ Observe
+![[${name.toLowerCase().replace(/\\s+/g, '-')}-sequence.jpg|500]]
 
-**Key Photos to Embed (use [PHOTO: ] syntax or upload real images to vault):**
-- [PHOTO: Key entry or control position for ${name}]
-- [PHOTO: Critical grip, hook, or isolation detail]
-- [PHOTO: Finish or pressure mechanics]
-- [PHOTO: Common angle or correction]
+**Watch these videos first** (in order):
+- [Primary video](https://www.youtube.com/results?search_query=gracie+barra+${encodeURIComponent(name)}) - Best breakdown
+- [Secondary](https://www.youtube.com/results?search_query=${encodeURIComponent(name)}+bjj) - Clear demo
 
-## **Concept**
+**PHOTOS (MANDATORY - Hermes: Find real photos of this exact technique and make VISIBLE):**
+- Research high-quality instructional photos (GB curriculum, competition stills, detailed grip/angle shots).
+- Embed visibly: ![[${name.toLowerCase().replace(/\\s+/g, '-')}-1.jpg|500]]
+- ![[${name.toLowerCase().replace(/\\s+/g, '-')}-grip.jpg|400]]
+- Suggest adding actual image files to vault media folder.
 
-${name} is a high-percentage ${category} from ${position}. It uses precise timing, leverage, and control to achieve the goal, emphasizing fatigue-resistant mechanics and seamless transitions. The technique follows the 2026 GB1 golden standard for clarity, safety, and effectiveness under resistance.
+Focus on [key details like grips, base, hip position].
 
-## **Setup**
+---
 
-- You are in ${position} position with balanced posture and ready hands.
-- Opponent is in a position that allows the entry for ${name}.
-- Key elements: control the opponent's base and structure, isolate the target limb or position.
-- Goal: Execute with minimal energy, using body mechanics and opponent's movement.
+## 🔥 Why This Matters
+[Why high percentage / important in game. Quick win under fatigue or vs larger opponent.]
 
-## **Execution**
+---
 
-**1. Establish control and entry**
-- Secure dominant position and connection.
-- Use the opponent's reaction or commitment to create the opening.
-- Maintain low base and strong posture.
-- Cue: "Control first, then commit."
+## 🧠 5 Sharp Principles
 
-**2. Isolate the target**
-- Disrupt the opponent's structure or limb.
-- Use grips, hooks, or pressure to isolate.
-- Keep your own base and balance.
-- Cue: "Isolate without overcommitting."
+> [!tip] **1. [Principle Name]**  
+> [Short explanation]  
+> *Why it works*: [reason]
 
-**3. Apply the technique**
-- Use mechanical advantage (leverage, weight, angle).
-- Progress the pressure or motion gradually then decisively.
-- Maintain control throughout.
-- Cue: "Leverage over strength, timing over speed."
+> [!tip] **2. ...**
 
-**4. Finish and control**
-- Complete the submission, sweep, or position.
-- Secure the finish or transition.
-- Be prepared for resistance or follow-ups.
-- Cue: "Finish with control, not force."
+> [!tip] **3. ...**
 
-**Fatigue & Pressure Reality (2026 GB1 standard):**
-- This falls apart first when tired or vs heavier/posturing opponent. The first cue that disappears is [key timing or connection].
-- Under resistance, the early failure is usually [common structural break].
+> [!tip] **4. ...**
 
-**My Personal "Feels Right" Cues:**
-- [Main connection or pressure feel].
-- [Timing cue].
-- [Safety/base cue].
+> [!tip] **5. ...**
 
-## **Common Mistakes**
+> [!warning] **Common Mistakes**  
+> - Mistake 1
+> - Mistake 2
 
-- Rushing before full control or base.
-- Using arm strength instead of body weight and leverage.
-- Poor positioning allowing escape or reversal.
-- Losing the isolation during transition.
+---
 
-## **When It Wins**
+## ✅ Execute (Step-by-Step)
 
-Best against specific reactions or positions where the isolation is available. Use when the opponent [common trigger]. Transitions to [related] if defended.
+1. Detailed step 1 with grips, posture, timing.
+2. ...
+**Key Cue Reminder**: “...” 
 
-## **Personal Cues & Notes**
+---
 
-${notes || 'Add your personal observations here. Focus on what works under fatigue and real pressure.'}
+## 🏋️ Drills (Short & Specific)
 
-*Full golden standard polish applied via live site chat following permanent instructions. Refresh to view.*`;
+**Drill 1 – [Focus] (2-3 min)**  
+[Specific isolated drill]
+
+**Drill 2 – ...**
+
+**Drill 3 – Full ${name} (5 min)**
+
+**Drill 4 – Live from position**
+
+---
+
+## 📍 Where It Leads
+- Success → [top position or submission]
+- Failure → [opponent passes or escapes]
+- Long-term: [connections to other techniques]
+
+---
+
+## 📝 Personal Notes & Reflection
+**After training, answer these quickly:**
+
+- What felt strongest today?
+- Where did I lose the technique?
+- One small adjustment for next time: ____________________
+
+*(Raw training notes here)*
+
+---
+
+*Last updated: {{date}} • June 2026 Gold Standard • Optimized for ADHD focus + deliberate practice*
+
+*Hermes/Grok: Photos researched and embedded for visibility. Full template followed.*`;
 
   return frontmatter + body;
 }

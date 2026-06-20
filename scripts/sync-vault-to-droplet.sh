@@ -26,7 +26,7 @@ fi
 
 RSYNC_SSH="ssh -o StrictHostKeyChecking=no"
 if [ -n "$DROPLET_PASS" ]; then
-  RSYNC_SSH="sshpass -p $DROPLET_PASS ssh -o StrictHostKeyChecking=no"
+  RSYNC_SSH="sshpass -p \"$DROPLET_PASS\" ssh -o StrictHostKeyChecking=no"
 fi
 
 PULL=false

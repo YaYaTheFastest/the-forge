@@ -96,6 +96,7 @@
 - **Tracking**: Central log. No task without entry. Hermes must report completion with evidence. Grok re-triggers if needed.
 - **Anticipation**: System infers type from input and fills gaps intelligently.
 - **Simple User Commands** (documented, accessible via chat/site): See Simple Commands Reference.
+  - "forge autonomous-optimize [--dry-run] [--focus bjj|equipment|fitness]" : End-to-end autonomous (sync, audit vs Gold Standards, anticipation batch for photos/Job Cards/maintenance/links, bulk apply, RACI log with proof, report, optional Hermes, pm2 if needed). Zero input, full tracking per brain prefs.
 
 **Code Structure (Key for Variations)**
 - **lib/vault.ts**: Core data layer.

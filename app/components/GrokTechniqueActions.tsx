@@ -201,7 +201,7 @@ export function GrokTechniqueActions({ technique }: GrokTechniqueActionsProps) {
   };
 
   // Specific one-click Grok actions (direct apply where supported by the backend).
-  const polishFull = () => callGrok('polish this to the 2026 GB1 golden standard and apply directly');
+  const polishFull = () => callGrok('polish this to the JUNE 2026 GOLD STANDARD using the exact template (include visible photos from research) and apply directly');
   const improveCues = () => callGrok('improve the personal cues and notes for fatigue and apply directly');
   const enhanceMedia = () => callGrok('add better media placeholders and video suggestions and apply directly');
 

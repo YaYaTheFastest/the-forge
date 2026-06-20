@@ -1,9 +1,15 @@
 import Link from 'next/link';
-import { getDomainSummary, getAllTechniques, getFitnessSummary, getAllShopEquipment, getDomainFiles } from '@/lib/vault';
+import { notFound } from 'next/navigation';
+import { getDomainSummary, getAllTechniques, getFitnessSummary, getAllShopEquipment, getDomainFiles, isDomainHidden } from '@/lib/vault';
 import DomainClient from './DomainClient';
 
 export default async function DomainPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+
+  if (await isDomainHidden(slug)) {
+    notFound();
+  }
+
   const summary = await getDomainSummary(slug);
 
   let extraData: any = {};
@@ -15,10 +21,12 @@ export default async function DomainPage({ params }: { params: Promise<{ slug: s
   } else if (slug === 'equipment') {
     const eq = await getAllShopEquipment();
     extraData.equipmentNames = eq.slice(0, 20).map((e: any) => e.name);  // show more so 25 count matches visible items better
-  } else {
-    // Custom / new domains like "andres" - list real files from vault so created content is visible
-    const files = await getDomainFiles(slug);
-    extraData.domainFiles = files.map((f: any) => f.name);
+  }
+  // Always try custom domain files for new domains like andres (case variants handled in getDomainFiles)
+  // This ensures content created via chat is listed
+  const files = await getDomainFiles(slug);
+  if (files && files.length > 0) {
+    extraData.domainFiles = files;  // pass full {name, file, content} so clicking can show content
   }
 
   return (
