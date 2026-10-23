@@ -24,7 +24,14 @@ const categoryStyles: Record<string, { bg: string; text: string; label: string }
   guard: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Guard' },
 };
 
-const allCategories = Object.keys(categoryStyles);
+// Deduplicate pills by the label they will display (prevents multiple "Submission", "Guard Pass", "Transition" buttons caused by alias keys like 'guard-passing' vs 'guard-pass')
+const seenLabels = new Set<string>();
+const allCategories = Object.keys(categoryStyles).filter(key => {
+  const label = categoryStyles[key].label;
+  if (seenLabels.has(label)) return false;
+  seenLabels.add(label);
+  return true;
+});
 
 function getCategoryHex(cat?: string): string {
   const key = (cat || '').toLowerCase();
@@ -97,6 +104,8 @@ export default function TechniquesClient({
   const [showOnlyGB1, setShowOnlyGB1] = useState(false);
   const [minConfidence, setMinConfidence] = useState(initialMinConfidence ?? 0);
   const [hasVideo, setHasVideo] = useState(false);
+  const [hasNotes, setHasNotes] = useState(false); // new quality filter
+  const [highQuality, setHighQuality] = useState(false); // new quality filter for strong cards
 
   const router = useRouter();
   const pathname = usePathname();
@@ -151,21 +160,36 @@ export default function TechniquesClient({
       const matchesSearch = !q || 
         tech.name.toLowerCase().includes(q) ||
         (tech.principle_tags || []).some((t: string) => t.toLowerCase().includes(q)) ||
-        (tech.category || '').toLowerCase().includes(q) ||
+        (Array.isArray(tech.category) ? tech.category : (tech.category ? [tech.category] : [])).some((c: any) => String(c || '').toLowerCase().includes(q)) ||
         (tech.position || '').toLowerCase().includes(q) ||
         (tech.gb_curriculum || []).some((g: string) => g.toLowerCase().includes(q));
 
-      const matchesCategory = selectedCategories.length === 0 || (tech.category && (() => {
-        const catNorm = normalizeForMatch(tech.category);
-        return selectedCategories.some(selected => {
-          const sNorm = normalizeForMatch(selected);
-          return catNorm === sNorm || catNorm.includes(sNorm) || sNorm.includes(catNorm);
+      const matchesCategory = selectedCategories.length === 0 || (() => {
+        const cats = Array.isArray(tech.category) ? tech.category : (tech.category ? [tech.category] : []);
+        const pos = tech.position ? [tech.position] : [];
+        const allTags = [...cats, ...pos].map((x: any) => String(x || ''));
+        return allTags.some((tag: string) => {
+          const tagNorm = normalizeForMatch(tag);
+          return selectedCategories.some(selected => {
+            const sNorm = normalizeForMatch(selected);
+            // Special boost for "Guard" pill to catch position-based guard types (closed-guard, open-guard, half-guard etc.)
+            if (sNorm === 'guard' && (tagNorm.includes('guard') || tagNorm.includes('closed') || tagNorm.includes('open') || tagNorm.includes('half'))) {
+              return true;
+            }
+            return tagNorm === sNorm || tagNorm.includes(sNorm) || sNorm.includes(tagNorm);
+          });
         });
-      })());
+      })();
       const matchesGB1 = !showOnlyGB1 || (tech.gb_curriculum && tech.gb_curriculum.some(g => g.includes('GB1')));
       const matchesConfidence = (tech.confidence || 0) >= minConfidence;
       const matchesVideo = !hasVideo || (tech.videos && tech.videos.length > 0);
-      return matchesSearch && matchesCategory && matchesGB1 && matchesConfidence && matchesVideo;
+      const matchesNotes = !hasNotes || (tech.personalNotes && tech.personalNotes.trim().length > 20);
+      const matchesHighQuality = !highQuality || (
+        (tech.gb_curriculum && tech.gb_curriculum.length > 0) &&
+        (tech.confidence || 0) >= 3 &&
+        (tech.videos && tech.videos.length > 0 || (tech.personalNotes && tech.personalNotes.trim().length > 50))
+      );
+      return matchesSearch && matchesCategory && matchesGB1 && matchesConfidence && matchesVideo && matchesNotes && matchesHighQuality;
     });
   }, [initialTechniques, search, selectedCategories, showOnlyGB1, minConfidence, hasVideo]);
 
@@ -179,6 +203,8 @@ export default function TechniquesClient({
     setShowOnlyGB1(false);
     setMinConfidence(0);
     setHasVideo(false);
+    setHasNotes(false);
+    setHighQuality(false);
   };
 
   return (
@@ -236,6 +262,11 @@ export default function TechniquesClient({
             <span className="flex items-center gap-1"><Video className="h-4 w-4" /> Has Video</span>
           </label>
 
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={hasNotes} onChange={(e) => setHasNotes(e.target.checked)} className="accent-black" />
+            <span>Has Notes</span>
+          </label>
+
           <div className="flex items-center gap-3">
             <span className="text-muted-foreground">Min Confidence:</span>
             {[0,1,2,3,4,5].map(n => (
@@ -248,6 +279,11 @@ export default function TechniquesClient({
               </button>
             ))}
           </div>
+
+          <label className="flex items-center gap-2 cursor-pointer text-xs">
+            <input type="checkbox" checked={highQuality} onChange={(e) => setHighQuality(e.target.checked)} className="accent-black" />
+            <span>High Quality (GB1 + conf 3+ + media/notes)</span>
+          </label>
         </div>
       </div>
 

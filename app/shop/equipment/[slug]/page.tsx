@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
 import { MediaSection } from '@/app/components/media/MediaSection';
 import { HermesPromptClient } from '../HermesPromptClient';
-import { HermesTriggerClient } from './HermesTriggerClient';
+import { HermesTriggerClient } from '../HermesTriggerClient';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -76,12 +76,16 @@ export default async function EquipmentProfilePage({ params }: Props) {
   // The template now strongly recommends real photos. We extract simple [PHOTO: ...] or markdown images for display.
   const contentForPhotos = equipment.content || '';
   const photoMatches = contentForPhotos.match(/\[PHOTO:[^\]]+\]|\!\[[^\]]*\]\([^)]+\)/g) || [];
-  const photos = photoMatches.map((match, index) => ({
-    description: match.replace(/\[PHOTO:\s*|\]|\!\[|\]\(.*\)/g, '').trim() || `Photo ${index + 1}`,
-    url: null, // In future: map to actual image URLs if stored in public/ or vault attachments
-  }));
+  const photos = photoMatches.map((match, index) => {
+    const desc = match.replace(/\[PHOTO:\s*|\]|\!\[|\]\(.*\)/g, '').trim() || `Photo ${index + 1}`;
+    return {
+      description: desc,
+      url: `https://picsum.photos/id/${(index % 10) + 1010}/600/300`, // placeholder until real vault images
+      caption: desc,
+    };
+  });
 
-  const videos: any[] = [];
+  const videos: { url: string }[] = [];
 
   return (
     <div className="max-w-5xl mx-auto p-6 md:p-8">

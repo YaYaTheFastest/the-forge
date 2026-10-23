@@ -22,7 +22,7 @@ export function HermesTriggerClient({ action, slug }: HermesTriggerClientProps) 
         const shortcutName = 'Send Latest Hermes Task';
         const encodedContent = encodeURIComponent(result.taskContent);
         const url = `shortcuts://run-shortcut?name=${encodeURIComponent(shortcutName)}&input=text&text=${encodedContent}`;
-        
+
         // Fire the Shortcut (this will switch to Shortcuts app and send)
         window.location.href = url;
       } else {

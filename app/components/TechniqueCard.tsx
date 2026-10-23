@@ -68,8 +68,8 @@ export function TechniqueCard({ tech, className }: TechniqueCardProps) {
         </div>
 
         {tech.position && (
-          <div className="text-[11px] text-muted-foreground mb-2 capitalize">
-            {tech.position.replace(/-/g, ' ')}
+          <div className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium mb-2 capitalize">
+            {String(tech.position).replace(/-/g, ' ')}
           </div>
         )}
 
@@ -104,7 +104,10 @@ export function TechniqueCard({ tech, className }: TechniqueCardProps) {
           {/* Observe (light teaser for full card context) */}
           {tech.position && (
             <div className="text-[10px] text-muted-foreground mb-1 line-clamp-1">
-              {tech.position.replace(/-/g, ' ')} — {tech.category ? tech.category.replace(/-/g, ' ') : 'technique'}
+              {String(tech.position).replace(/-/g, ' ')} — {(() => {
+                const c = Array.isArray(tech.category) ? tech.category[0] : tech.category;
+                return c ? String(c).replace(/-/g, ' ') : 'technique';
+              })()}
             </div>
           )}
 

@@ -14,13 +14,14 @@ const categoryConfig: Record<string, { label: string; className: string }> = {
 };
 
 interface CategoryBadgeProps {
-  category?: string;
+  category?: string | string[];
   className?: string;
 }
 
 export function CategoryBadge({ category, className }: CategoryBadgeProps) {
-  const key = (category || '').toLowerCase();
-  const config = categoryConfig[key] || { label: category || 'Technique', className: 'bg-gray-100 text-gray-700 border-gray-200' };
+  const first = Array.isArray(category) ? (category[0] || '') : (category || '');
+  const key = String(first).toLowerCase().trim();
+  const config = categoryConfig[key] || { label: first || 'Technique', className: 'bg-gray-100 text-gray-700 border-gray-200' };
 
   return (
     <span

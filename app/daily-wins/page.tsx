@@ -43,8 +43,8 @@ export default function DailyWinsPage() {
   // In a real implementation these would come from server components or client fetch.
   // For now we hardcode a realistic dynamic list derived from the seeded forge-state.json.
   const dynamicEquipmentSuggestions = [
-    { name: "JD2150 — Oil & Filter", equipmentName: "1987 John Deere 2150", serviceType: "Oil & Filter Change", slug: "1987-john-deere-2150", desc: "RED — overdue" },
-    { name: "KTM TTR110 — Basic Service", equipmentName: "Yamaha TT-R110E", serviceType: "Basic Service", slug: "yamaha-tt-r110e", desc: "YELLOW — approaching window" },
+    { name: "JD2150 — Oil & Filter", equipmentName: "1987 John Deere 2150", serviceType: "Oil & Filter Change", slug: "1987-john-deere-2150", desc: "RED — overdue", type: "maintenance" },
+    { name: "KTM TTR110 — Basic Service", equipmentName: "Yamaha TT-R110E", serviceType: "Basic Service", slug: "yamaha-tt-r110e", desc: "YELLOW — approaching window", type: "maintenance" },
   ];
 
   // === LOW-NOISE CURATED LISTS (as approved) ===
